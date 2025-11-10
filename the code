@@ -146,7 +146,6 @@ for _,plr in pairs(Players:GetPlayers()) do
     end)
 end
 
--- RESET ALL STATES ON SCRIPT START
 local humanoid=getHumanoid()
 if humanoid then humanoid.WalkSpeed=16 end
 walkspeedEnabled=false
@@ -157,5 +156,19 @@ for _,plr in pairs(Players:GetPlayers()) do
     removeESP(plr)
     removeChams(plr)
 end
+
+Window:OnClose(function()
+    local humanoid=getHumanoid()
+    if humanoid then humanoid.WalkSpeed=16 end
+    walkspeedEnabled=false
+    noclipEnabled=false
+    espEnabled=false
+    chamsEnabled=false
+    for _,plr in pairs(Players:GetPlayers()) do
+        removeESP(plr)
+        removeChams(plr)
+    end
+    if walkLoop then walkLoop:Disconnect() walkLoop=nil end
+end)
 
 Rayfield:LoadConfiguration()
