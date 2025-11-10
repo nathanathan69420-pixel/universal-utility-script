@@ -34,7 +34,6 @@ local function getHumanoid()
     end
 end
 
--- WalkSpeed Slider + Toggle
 MovementTab:CreateSlider({Name="WalkSpeed",Range={16,100},Increment=0.5,Suffix="Speed",CurrentValue=16,Flag="WalkSpeedSlider",Callback=function(Value) selectedSpeed=Value end})
 MovementTab:CreateToggle({Name="Enable WalkSpeed",CurrentValue=false,Flag="WalkSpeedToggle",Callback=function(Value)
     walkspeedEnabled=Value
@@ -50,11 +49,9 @@ MovementTab:CreateToggle({Name="Enable WalkSpeed",CurrentValue=false,Flag="WalkS
     end
 end})
 
--- JumpPower
 MovementTab:CreateSlider({Name="JumpPower",Range={50,500},Increment=5,Suffix="JumpPower",CurrentValue=50,Flag="JumpPowerSlider",Callback=function(Value) jumpPowerValue=Value end})
 MovementTab:CreateToggle({Name="Jumppower toggle",CurrentValue=false,Flag="JumpPowerToggle",Callback=function(Value) jumpEnabled=Value end})
 
--- Fly Mode
 MovementTab:CreateToggle({Name="Fly Mode",CurrentValue=false,Flag="FlyToggle",Callback=function(Value)
     flyEnabled=Value
     local char=player.Character
@@ -80,7 +77,6 @@ MovementTab:CreateToggle({Name="Fly Mode",CurrentValue=false,Flag="FlyToggle",Ca
 end})
 MovementTab:CreateSlider({Name="Fly Speed",Range={10,200},Increment=5,Suffix="Speed",CurrentValue=50,Flag="FlySpeedSlider",Callback=function(Value) flySpeed=Value end})
 
--- NoClip
 MovementTab:CreateToggle({Name="NoClip",CurrentValue=false,Flag="NoClipToggle",Callback=function(Value) noclipEnabled=Value end})
 
 RunService.Heartbeat:Connect(function()
@@ -95,7 +91,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Team-based Box ESP (Player ESP)
 local function getTeamColor(plr)
     if plr.Team == player.Team then
         return Color3.fromRGB(0,255,0)
@@ -112,16 +107,19 @@ end
 local function addESP(plr)
     local char=plr.Character
     if char and plr~=player then
-        local box = Instance.new("BoxHandleAdornment")
-        box.Name="ESPBox"
-        box.Adornee=char
-        box.Size=Vector3.new(4,6,2)
-        box.Color3=getTeamColor(plr)
-        box.Transparency=0.45
-        box.AlwaysOnTop=true
-        box.ZIndex=10
-        box.Parent=char
-        highlights[char]=box
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local box = Instance.new("BoxHandleAdornment")
+            box.Name="ESPBox"
+            box.Adornee=hrp
+            box.Size = Vector3.new(hrp.Size.X*2, hrp.Size.Y*3, hrp.Size.Z*2)
+            box.Color3 = getTeamColor(plr)
+            box.Transparency = 0.45
+            box.AlwaysOnTop = true
+            box.ZIndex = 10
+            box.Parent = hrp
+            highlights[char] = box
+        end
     end
 end
 
@@ -130,7 +128,6 @@ VisualsTab:CreateToggle({Name="Player ESP",CurrentValue=false,Flag="PlayerESP",C
     for _,plr in pairs(Players:GetPlayers()) do if Value then addESP(plr) else removeESP(plr) end end
 end})
 
--- Chams (outline only, white, 55% visible)
 local function removeChams(plr)
     local char=plr.Character
     if char and chamsParts[char] then
@@ -162,7 +159,6 @@ VisualsTab:CreateToggle({Name="Chams",CurrentValue=false,Flag="ChamsToggle",Call
     for _,plr in pairs(Players:GetPlayers()) do if Value then addChams(plr) else removeChams(plr) end end
 end})
 
--- Player join/leave handling
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function()
         if espEnabled then addESP(plr) end
