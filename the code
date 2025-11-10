@@ -13,7 +13,6 @@ local Window = Rayfield:CreateWindow({
 
 local MovementTab = Window:CreateTab("Movement",4483362458)
 local VisualsTab = Window:CreateTab("Visuals",4483362458)
-local TrollTab = Window:CreateTab("Troll",4483362458)
 
 local walkspeedEnabled=false
 local selectedSpeed=16
@@ -25,12 +24,10 @@ local flyLoop=nil
 local noclipEnabled=false
 local espEnabled=false
 local highlights={}
-local flingEnabled=false
 local chamsEnabled=false
 local chamsParts={}
 local teamColors={Color3.fromRGB(0,255,0),Color3.fromRGB(255,0,0),Color3.fromRGB(0,0,255),Color3.fromRGB(255,255,0),Color3.fromRGB(0,255,255),Color3.fromRGB(255,0,255)}
 local walkLoop=nil
-local flingConnection=nil
 
 local function getHumanoid()
     if player.Character then
@@ -166,42 +163,6 @@ end
 VisualsTab:CreateToggle({Name="Chams",CurrentValue=false,Flag="ChamsToggle",Callback=function(Value)
     chamsEnabled=Value
     for _,plr in pairs(Players:GetPlayers()) do if Value then addChams(plr) else removeChams(plr) end end
-end})
-
--- Troll Tab Fling (touch-based)
-TrollTab:CreateToggle({Name="Fling",CurrentValue=false,Flag="FlingToggle",Callback=function(Value)
-    flingEnabled=Value
-    local char=player.Character
-    if char then
-        local hrp=char:FindFirstChild("HumanoidRootPart")
-        if flingConnection then flingConnection:Disconnect() flingConnection=nil end
-        if Value and hrp then
-            -- Spin visual
-            coroutine.wrap(function()
-                while flingEnabled and hrp do
-                    hrp.CFrame=hrp.CFrame*CFrame.Angles(0,math.rad(5000),0)
-                    task.wait()
-                end
-            end)()
-            -- Touch fling
-            flingConnection=hrp.Touched:Connect(function(hit)
-                local plr=Players:GetPlayerFromCharacter(hit.Parent)
-                if plr and plr~=player then
-                    local otherHRP=hit.Parent:FindFirstChild("HumanoidRootPart")
-                    if otherHRP then
-                        local bodyVelocity=Instance.new("BodyVelocity")
-                        bodyVelocity.Velocity=(otherHRP.Position-hrp.Position).Unit*200
-                        bodyVelocity.MaxForce=Vector3.new(1e5,1e5,1e5)
-                        bodyVelocity.P=1e4
-                        bodyVelocity.Parent=otherHRP
-                        game.Debris:AddItem(bodyVelocity,0.2)
-                    end
-                end
-            end)
-        end
-    else
-        if flingConnection then flingConnection:Disconnect() flingConnection=nil end
-    end
 end})
 
 -- Handle player joins/leaves
