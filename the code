@@ -1,0 +1,270 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+
+local Window = Rayfield:CreateWindow({
+    Name = "WalkSpeed & Visuals",
+    LoadingTitle = "This was made for educational purposes ;)",
+    LoadingSubtitle = "Like and Subscribe",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "WalkspeedConfig",
+        FileName = "Settings"
+    }
+})
+
+local MovementTab = Window:CreateTab("Movement", 4483362458)
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+
+-- Movement
+local selectedSpeed = 16
+local originalWalkSpeed = nil
+local holdingShift = false
+local walkspeedConnection = nil
+
+local function setLocalHumanoidWalkSpeed(value)
+    if player and player.Character then
+        local h = player.Character:FindFirstChildWhichIsA("Humanoid")
+        if h then
+            h.WalkSpeed = value
+        end
+    end
+end
+
+local function startWalkSpeedLoop()
+    if walkspeedConnection then return end
+    if player and player.Character then
+        local h = player.Character:FindFirstChildWhichIsA("Humanoid")
+        if h then
+            originalWalkSpeed = originalWalkSpeed or h.WalkSpeed
+        end
+    end
+    walkspeedConnection = RunService.Heartbeat:Connect(function()
+        if holdingShift then
+            setLocalHumanoidWalkSpeed(selectedSpeed)
+        else
+            if originalWalkSpeed then
+                setLocalHumanoidWalkSpeed(originalWalkSpeed)
+            end
+        end
+    end)
+end
+
+MovementTab:CreateSlider({
+    Name = "WalkSpeed",
+    Range = {16, 21},
+    Increment = 0.5,
+    Suffix = "Speed",
+    CurrentValue = 16,
+    Flag = "WalkSpeedSlider",
+    Callback = function(Value)
+        selectedSpeed = Value
+    end,
+})
+
+startWalkSpeedLoop()
+
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.LeftShift then
+        holdingShift = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.LeftShift then
+        holdingShift = false
+    end
+end)
+
+-- Visuals
+local espEnabled = false
+local espColor = Color3.fromRGB(255,255,255)
+local highlights = {}
+local nameTags = {}
+local notifyOnHurt = false
+local healthConnections = {}
+local lastHealth = {}
+local hurtCooldown = {}
+
+local function notify(title, content, duration)
+    pcall(function()
+        Rayfield:Notify({
+            Title = title or "Notification",
+            Content = content or "",
+            Duration = duration or 4
+        })
+    end)
+end
+
+local function addESP(plr)
+    if not plr.Character then return end
+    local char = plr.Character
+
+    if not highlights[char] then
+        local h = Instance.new("Highlight")
+        h.Name = "ESP_Highlight"
+        h.Adornee = char
+        h.Parent = char
+        h.FillColor = espColor
+        h.FillTransparency = 0.55
+        h.OutlineColor = espColor
+        h.OutlineTransparency = 0
+        highlights[char] = h
+    end
+
+    if not nameTags[char] then
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "NameTag"
+        billboard.Adornee = char:FindFirstChild("Head")
+        billboard.Size = UDim2.new(0,100,0,50)
+        billboard.StudsOffset = Vector3.new(0,2,0)
+        billboard.AlwaysOnTop = true
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(1,0,1,0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.TextColor3 = Color3.new(1,1,1)
+        textLabel.TextStrokeTransparency = 0
+        textLabel.TextScaled = true
+        textLabel.Text = plr.Name .. " | " .. math.floor((char:FindFirstChildWhichIsA("Humanoid") or {Health=0}).Health)
+        textLabel.Parent = billboard
+        billboard.Parent = char
+        nameTags[char] = textLabel
+    end
+end
+
+local function removeESP(plr)
+    if plr.Character then
+        local char = plr.Character
+        if highlights[char] then
+            highlights[char]:Destroy()
+            highlights[char] = nil
+        end
+        if nameTags[char] then
+            nameTags[char].Parent:Destroy()
+            nameTags[char] = nil
+        end
+    end
+end
+
+local function updateNameTags()
+    for char, label in pairs(nameTags) do
+        local hum = char:FindFirstChildWhichIsA("Humanoid")
+        if hum then
+            label.Text = char.Name .. " | " .. math.floor(hum.Health)
+        end
+    end
+end
+
+local function monitorHumanoid(plr, humanoid)
+    lastHealth[humanoid] = humanoid.Health
+    if healthConnections[humanoid] then healthConnections[humanoid]:Disconnect() end
+    healthConnections[humanoid] = humanoid.HealthChanged:Connect(function()
+        local prev = lastHealth[humanoid]
+        local current = humanoid.Health
+        lastHealth[humanoid] = current
+        if current < prev and notifyOnHurt then
+            local now = tick()
+            if hurtCooldown[plr.UserId] and now - hurtCooldown[plr.UserId] < 2 then return end
+            hurtCooldown[plr.UserId] = now
+            local diff = math.max(0, prev - current)
+            notify("Player Hurt", plr.Name .. " took " .. tostring(math.floor(diff)) .. " damage. (" .. tostring(math.floor(current)) .. " HP left)", 4)
+        end
+    end)
+end
+
+local function monitorCharacter(plr, char)
+    if not char then return end
+    local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+    if humanoid then monitorHumanoid(plr, humanoid) end
+    char.ChildAdded:Connect(function(child)
+        if child:IsA("Humanoid") then
+            monitorHumanoid(plr, child)
+        end
+    end)
+end
+
+local function startMonitoringAll()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character then
+            monitorCharacter(plr, plr.Character)
+        end
+    end
+end
+
+local function stopMonitoringAll()
+    for hum, conn in pairs(healthConnections) do
+        if conn then conn:Disconnect() end
+    end
+    healthConnections = {}
+    lastHealth = {}
+    hurtCooldown = {}
+end
+
+RunService.Heartbeat:Connect(function()
+    if espEnabled then updateNameTags() end
+end)
+
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function(char)
+        if espEnabled then addESP(plr) end
+        if notifyOnHurt then monitorCharacter(plr, char) end
+    end)
+    if espEnabled and plr.Character then addESP(plr) end
+    if notifyOnHurt and plr.Character then monitorCharacter(plr, plr.Character) end
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    removeESP(plr)
+    if plr.Character then
+        local humanoid = plr.Character:FindFirstChildWhichIsA("Humanoid")
+        if humanoid and healthConnections[humanoid] then
+            healthConnections[humanoid]:Disconnect()
+            healthConnections[humanoid] = nil
+            lastHealth[humanoid] = nil
+            hurtCooldown[plr.UserId] = nil
+        end
+    end
+end)
+
+VisualsTab:CreateToggle({
+    Name = "Player ESP",
+    CurrentValue = false,
+    Flag = "PlayerESP",
+    Callback = function(Value)
+        espEnabled = Value
+        if not Value then
+            for _, plr in pairs(Players:GetPlayers()) do removeESP(plr) end
+        else
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= player then addESP(plr) end
+            end
+        end
+    end,
+})
+
+VisualsTab:CreateColorPicker({
+    Name = "ESP Color",
+    CurrentColor = espColor,
+    Flag = "ESPColor",
+    Callback = function(Color)
+        espColor = Color
+        for _, h in pairs(highlights) do
+            h.FillColor = Color
+            h.OutlineColor = Color
+        end
+    end,
+})
+
+VisualsTab:CreateToggle({
+    Name = "Notification On Hurt",
+    CurrentValue = false,
+    Flag = "NotifyOnHurt",
+    Callback = function(Value)
+        notifyOnHurt = Value
+        if Value then startMonitoringAll() else stopMonitoringAll() end
+    end,
+})
+
+Rayfield:LoadConfiguration()
