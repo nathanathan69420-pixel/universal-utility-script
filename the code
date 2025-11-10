@@ -1,7 +1,6 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
 local Window = Rayfield:CreateWindow({
@@ -107,19 +106,21 @@ end
 local function addESP(plr)
     local char=plr.Character
     if char and plr~=player then
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local box = Instance.new("BoxHandleAdornment")
-            box.Name="ESPBox"
-            box.Adornee=hrp
-            box.Size = Vector3.new(hrp.Size.X*2, hrp.Size.Y*3, hrp.Size.Z*2)
-            box.Color3 = getTeamColor(plr)
-            box.Transparency = 0.45
-            box.AlwaysOnTop = true
-            box.ZIndex = 10
-            box.Parent = hrp
-            highlights[char] = box
+        local box = Instance.new("BoxHandleAdornment")
+        box.Name="ESPBox"
+        box.Adornee = char
+        local hum = char:FindFirstChildWhichIsA("Humanoid")
+        if hum then
+            box.Size = Vector3.new(4, hum.HipHeight*2 + 4, 2)
+        else
+            box.Size = Vector3.new(4,6,2)
         end
+        box.Color3 = getTeamColor(plr)
+        box.Transparency = 0.45
+        box.AlwaysOnTop = true
+        box.ZIndex = 10
+        box.Parent = char
+        highlights[char] = box
     end
 end
 
