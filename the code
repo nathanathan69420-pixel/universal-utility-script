@@ -40,7 +40,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-MovementTab:CreateSlider({
+local WalkSpeedSlider = MovementTab:CreateSlider({
     Name = "WalkSpeed",
     Range = {16, 100},
     Increment = 0.5,
@@ -52,7 +52,7 @@ MovementTab:CreateSlider({
     end,
 })
 
-MovementTab:CreateToggle({
+local WalkSpeedToggle = MovementTab:CreateToggle({
     Name = "Enable WalkSpeed",
     CurrentValue = false,
     Flag = "WalkSpeedToggle",
@@ -60,6 +60,13 @@ MovementTab:CreateToggle({
         walkspeedEnabled = Value
     end,
 })
+
+-- Apply saved config immediately
+local savedConfig = Rayfield:LoadConfiguration()
+if savedConfig then
+    selectedSpeed = WalkSpeedSlider:Load()
+    walkspeedEnabled = WalkSpeedToggle:Load()
+end
 
 -- Visuals ESP
 local espEnabled = false
@@ -78,7 +85,6 @@ end
 local function addESP(plr)
     local char = plr.Character
     if char and plr ~= player then
-        -- Highlight
         local highlight = Instance.new("Highlight")
         highlight.Name = "ESPHighlight"
         highlight.Adornee = char
@@ -89,14 +95,13 @@ local function addESP(plr)
         highlight.Parent = char
         highlights[char] = highlight
 
-        -- Nametag
         local head = char:FindFirstChild("Head")
         if head then
             local billboard = Instance.new("BillboardGui")
             billboard.Name = "Nametag"
             billboard.Adornee = head
             billboard.Size = UDim2.new(0, 120, 0, 30)
-            billboard.StudsOffset = Vector3.new(0, 2.25, 0) -- lowered for better view
+            billboard.StudsOffset = Vector3.new(0, 2.25, 0)
             billboard.AlwaysOnTop = true
 
             local label = Instance.new("TextLabel")
@@ -147,7 +152,6 @@ VisualsTab:CreateColorPicker({
     end
 })
 
--- Refresh ESP on respawn
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function()
         if espEnabled then addESP(plr) end
