@@ -61,7 +61,9 @@ MovementTab:CreateSlider({
     CurrentValue = 16,
     Flag = "WalkSpeedSlider",
     Callback = function(Value)
-        selectedSpeed = Value
+        if leftShiftEnabled then
+            selectedSpeed = Value
+        end
     end,
 })
 
@@ -111,7 +113,6 @@ end
 local function addESP(plr)
     if not plr.Character then return end
     local char = plr.Character
-
     if not highlights[char] then
         local h = Instance.new("Highlight")
         h.Name = "ESP_Highlight"
@@ -123,7 +124,6 @@ local function addESP(plr)
         h.OutlineTransparency = 0
         highlights[char] = h
     end
-
     if not nameTags[char] then
         local billboard = Instance.new("BillboardGui")
         billboard.Name = "NameTag"
