@@ -1,6 +1,7 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
 local player = Players.LocalPlayer
 
 local Window = Rayfield:CreateWindow({
@@ -18,9 +19,17 @@ local selectedSpeed=16
 local noclipEnabled=false
 local espEnabled=false
 local chamsEnabled=false
+local fullbrightEnabled=false
 local highlights={}
 local chamsParts={}
 local walkLoop=nil
+
+local originalLighting = {
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime,
+    FogEnd = Lighting.FogEnd,
+    Ambient = Lighting.Ambient
+}
 
 local function getHumanoid()
     if player.Character then
@@ -112,9 +121,9 @@ local function addChams(plr)
             if part:IsA("BasePart") then
                 local outline=Instance.new("Highlight")
                 outline.Adornee=part
-                outline.FillTransparency=1
-                outline.OutlineColor=getTeamColor(plr)
-                outline.OutlineTransparency=0.45
+                outline.FillTransparency=0.55
+                outline.OutlineColor=Color3.fromRGB(255,255,255)
+                outline.OutlineTransparency=0
                 outline.Parent=workspace
                 table.insert(chamsParts[char],outline)
             end
@@ -126,6 +135,21 @@ VisualsTab:CreateToggle({Name="Chams",CurrentValue=false,Flag="ChamsToggle",Call
     chamsEnabled=Value
     if not Value then removeChams() else
         for _,plr in pairs(Players:GetPlayers()) do addChams(plr) end
+    end
+end})
+
+VisualsTab:CreateToggle({Name="FullBright",CurrentValue=false,Flag="FullBrightToggle",Callback=function(Value)
+    fullbrightEnabled=Value
+    if fullbrightEnabled then
+        Lighting.Brightness = 2
+        Lighting.ClockTime = 14
+        Lighting.FogEnd = 100000
+        Lighting.Ambient = Color3.fromRGB(255,255,255)
+    else
+        Lighting.Brightness = originalLighting.Brightness
+        Lighting.ClockTime = originalLighting.ClockTime
+        Lighting.FogEnd = originalLighting.FogEnd
+        Lighting.Ambient = originalLighting.Ambient
     end
 end})
 
@@ -141,6 +165,13 @@ Players.PlayerRemoving:Connect(function(plr)
     removeChams()
 end)
 
+for _,plr in pairs(Players:GetPlayers()) do
+    plr.CharacterAdded:Connect(function()
+        if espEnabled then addESP(plr) end
+        if chamsEnabled then addChams(plr) end
+    end)
+end
+
 -- RESET STATES ON SCRIPT START
 local humanoid=getHumanoid()
 if humanoid then humanoid.WalkSpeed=16 end
@@ -148,8 +179,13 @@ walkspeedEnabled=false
 noclipEnabled=false
 espEnabled=false
 chamsEnabled=false
+fullbrightEnabled=false
 removeESP()
 removeChams()
+Lighting.Brightness = originalLighting.Brightness
+Lighting.ClockTime = originalLighting.ClockTime
+Lighting.FogEnd = originalLighting.FogEnd
+Lighting.Ambient = originalLighting.Ambient
 
 Window:OnClose(function()
     local humanoid=getHumanoid()
@@ -158,8 +194,13 @@ Window:OnClose(function()
     noclipEnabled=false
     espEnabled=false
     chamsEnabled=false
+    fullbrightEnabled=false
     removeESP()
     removeChams()
+    Lighting.Brightness = originalLighting.Brightness
+    Lighting.ClockTime = originalLighting.ClockTime
+    Lighting.FogEnd = originalLighting.FogEnd
+    Lighting.Ambient = originalLighting.Ambient
     if walkLoop then walkLoop:Disconnect() walkLoop=nil end
 end)
 
