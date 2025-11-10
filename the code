@@ -96,7 +96,7 @@ local function addESP(plr)
             billboard.Name = "Nametag"
             billboard.Adornee = head
             billboard.Size = UDim2.new(0, 120, 0, 30)
-            billboard.StudsOffset = Vector3.new(0, 1.5, 0)
+            billboard.StudsOffset = Vector3.new(0, 2.25, 0) -- lowered for better view
             billboard.AlwaysOnTop = true
 
             local label = Instance.new("TextLabel")
@@ -147,7 +147,7 @@ VisualsTab:CreateColorPicker({
     end
 })
 
--- Automatically refresh ESP when players respawn
+-- Refresh ESP on respawn
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function()
         if espEnabled then addESP(plr) end
