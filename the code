@@ -1,7 +1,6 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
 local Window = Rayfield:CreateWindow({
@@ -20,35 +19,28 @@ local VisualsTab = Window:CreateTab("Visuals", 4483362458)
 
 -- Movement
 local selectedSpeed = 16
+local walkspeedEnabled = false
 local originalWalkSpeed = nil
-local holdingShift = false
 local walkspeedConnection = nil
-local leftShiftEnabled = false
 
-local function setLocalHumanoidWalkSpeed(value)
-    if player and player.Character then
+local function setWalkSpeed(value)
+    if player.Character then
         local h = player.Character:FindFirstChildWhichIsA("Humanoid")
-        if h then
-            h.WalkSpeed = value
-        end
+        if h then h.WalkSpeed = value end
     end
 end
 
 local function startWalkSpeedLoop()
     if walkspeedConnection then return end
-    if player and player.Character then
+    if player.Character then
         local h = player.Character:FindFirstChildWhichIsA("Humanoid")
-        if h then
-            originalWalkSpeed = originalWalkSpeed or h.WalkSpeed
-        end
+        if h then originalWalkSpeed = originalWalkSpeed or h.WalkSpeed end
     end
     walkspeedConnection = RunService.Heartbeat:Connect(function()
-        if leftShiftEnabled and holdingShift then
-            setLocalHumanoidWalkSpeed(selectedSpeed)
-        else
-            if originalWalkSpeed then
-                setLocalHumanoidWalkSpeed(originalWalkSpeed)
-            end
+        if walkspeedEnabled and selectedSpeed then
+            setWalkSpeed(selectedSpeed)
+        elseif originalWalkSpeed then
+            setWalkSpeed(originalWalkSpeed)
         end
     end)
 end
@@ -61,34 +53,20 @@ MovementTab:CreateSlider({
     CurrentValue = 16,
     Flag = "WalkSpeedSlider",
     Callback = function(Value)
-        if leftShiftEnabled then
-            selectedSpeed = Value
-        end
+        selectedSpeed = Value
     end,
 })
 
 MovementTab:CreateToggle({
-    Name = "LeftShift to run",
+    Name = "Enable WalkSpeed",
     CurrentValue = false,
-    Flag = "LeftShiftToggle",
+    Flag = "WalkSpeedToggle",
     Callback = function(Value)
-        leftShiftEnabled = Value
+        walkspeedEnabled = Value
     end,
 })
 
 startWalkSpeedLoop()
-
-UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.LeftShift then
-        holdingShift = true
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.LeftShift then
-        holdingShift = false
-    end
-end)
 
 -- Visuals
 local espEnabled = false
@@ -115,18 +93,16 @@ local function addESP(plr)
     local char = plr.Character
     if not highlights[char] then
         local h = Instance.new("Highlight")
-        h.Name = "ESP_Highlight"
         h.Adornee = char
-        h.Parent = char
         h.FillColor = espColor
         h.FillTransparency = 0.55
         h.OutlineColor = espColor
         h.OutlineTransparency = 0
+        h.Parent = char
         highlights[char] = h
     end
     if not nameTags[char] then
         local billboard = Instance.new("BillboardGui")
-        billboard.Name = "NameTag"
         billboard.Adornee = char:FindFirstChild("Head")
         billboard.Size = UDim2.new(0,100,0,50)
         billboard.StudsOffset = Vector3.new(0,2,0)
@@ -137,7 +113,8 @@ local function addESP(plr)
         textLabel.TextColor3 = Color3.new(1,1,1)
         textLabel.TextStrokeTransparency = 0
         textLabel.TextScaled = true
-        textLabel.Text = plr.Name .. " | " .. math.floor((char:FindFirstChildWhichIsA("Humanoid") or {Health=0}).Health)
+        local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+        textLabel.Text = plr.Name .. " | " .. (humanoid and math.floor(humanoid.Health) or 0)
         textLabel.Parent = billboard
         billboard.Parent = char
         nameTags[char] = textLabel
@@ -147,23 +124,15 @@ end
 local function removeESP(plr)
     if plr.Character then
         local char = plr.Character
-        if highlights[char] then
-            highlights[char]:Destroy()
-            highlights[char] = nil
-        end
-        if nameTags[char] then
-            nameTags[char].Parent:Destroy()
-            nameTags[char] = nil
-        end
+        if highlights[char] then highlights[char]:Destroy() highlights[char] = nil end
+        if nameTags[char] then nameTags[char].Parent:Destroy() nameTags[char] = nil end
     end
 end
 
 local function updateNameTags()
     for char, label in pairs(nameTags) do
-        local hum = char:FindFirstChildWhichIsA("Humanoid")
-        if hum then
-            label.Text = char.Name .. " | " .. math.floor(hum.Health)
-        end
+        local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+        if humanoid then label.Text = char.Name .. " | " .. math.floor(humanoid.Health) end
     end
 end
 
@@ -189,24 +158,18 @@ local function monitorCharacter(plr, char)
     local humanoid = char:FindFirstChildWhichIsA("Humanoid")
     if humanoid then monitorHumanoid(plr, humanoid) end
     char.ChildAdded:Connect(function(child)
-        if child:IsA("Humanoid") then
-            monitorHumanoid(plr, child)
-        end
+        if child:IsA("Humanoid") then monitorHumanoid(plr, child) end
     end)
 end
 
 local function startMonitoringAll()
     for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
-            monitorCharacter(plr, plr.Character)
-        end
+        if plr ~= player and plr.Character then monitorCharacter(plr, plr.Character) end
     end
 end
 
 local function stopMonitoringAll()
-    for hum, conn in pairs(healthConnections) do
-        if conn then conn:Disconnect() end
-    end
+    for hum, conn in pairs(healthConnections) do if conn then conn:Disconnect() end end
     healthConnections = {}
     lastHealth = {}
     hurtCooldown = {}
