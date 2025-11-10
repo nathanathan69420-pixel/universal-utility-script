@@ -17,8 +17,8 @@ local walkspeedEnabled=false
 local selectedSpeed=16
 local noclipEnabled=false
 local espEnabled=false
-local highlights={}
 local chamsEnabled=false
+local highlights={}
 local chamsParts={}
 local walkLoop=nil
 
@@ -45,9 +45,8 @@ end})
 MovementTab:CreateToggle({Name="NoClip",CurrentValue=false,Flag="NoClipToggle",Callback=function(Value) noclipEnabled=Value end})
 
 RunService.Heartbeat:Connect(function()
-    local char = player.Character
-    if noclipEnabled and char then
-        for _,part in pairs(char:GetDescendants()) do
+    if noclipEnabled and player.Character then
+        for _,part in pairs(player.Character:GetDescendants()) do
             if part:IsA("BasePart") then part.CanCollide=false end
         end
     end
@@ -61,9 +60,11 @@ local function getTeamColor(plr)
     end
 end
 
-local function removeESP(plr)
-    local char=plr.Character
-    if char and highlights[char] then highlights[char]:Destroy() highlights[char]=nil end
+local function removeESP()
+    for char,box in pairs(highlights) do
+        if box and box.Parent then box:Destroy() end
+    end
+    highlights = {}
 end
 
 local function addESP(plr)
@@ -89,17 +90,18 @@ end
 
 VisualsTab:CreateToggle({Name="Player ESP",CurrentValue=false,Flag="PlayerESP",Callback=function(Value)
     espEnabled=Value
-    for _,plr in pairs(Players:GetPlayers()) do
-        if Value then addESP(plr) else removeESP(plr) end
+    if not Value then removeESP() else
+        for _,plr in pairs(Players:GetPlayers()) do addESP(plr) end
     end
 end})
 
-local function removeChams(plr)
-    local char=plr.Character
-    if char and chamsParts[char] then
-        for _,outline in pairs(chamsParts[char]) do outline:Destroy() end
-        chamsParts[char]=nil
+local function removeChams()
+    for char,parts in pairs(chamsParts) do
+        for _,outline in pairs(parts) do
+            if outline and outline.Parent then outline:Destroy() end
+        end
     end
+    chamsParts = {}
 end
 
 local function addChams(plr)
@@ -122,8 +124,8 @@ end
 
 VisualsTab:CreateToggle({Name="Chams",CurrentValue=false,Flag="ChamsToggle",Callback=function(Value)
     chamsEnabled=Value
-    for _,plr in pairs(Players:GetPlayers()) do
-        if Value then addChams(plr) else removeChams(plr) end
+    if not Value then removeChams() else
+        for _,plr in pairs(Players:GetPlayers()) do addChams(plr) end
     end
 end})
 
@@ -135,27 +137,19 @@ Players.PlayerAdded:Connect(function(plr)
 end)
 
 Players.PlayerRemoving:Connect(function(plr)
-    removeESP(plr)
-    removeChams(plr)
+    removeESP()
+    removeChams()
 end)
 
-for _,plr in pairs(Players:GetPlayers()) do
-    plr.CharacterAdded:Connect(function()
-        if espEnabled then addESP(plr) end
-        if chamsEnabled then addChams(plr) end
-    end)
-end
-
+-- RESET STATES ON SCRIPT START
 local humanoid=getHumanoid()
 if humanoid then humanoid.WalkSpeed=16 end
 walkspeedEnabled=false
 noclipEnabled=false
 espEnabled=false
 chamsEnabled=false
-for _,plr in pairs(Players:GetPlayers()) do
-    removeESP(plr)
-    removeChams(plr)
-end
+removeESP()
+removeChams()
 
 Window:OnClose(function()
     local humanoid=getHumanoid()
@@ -164,10 +158,8 @@ Window:OnClose(function()
     noclipEnabled=false
     espEnabled=false
     chamsEnabled=false
-    for _,plr in pairs(Players:GetPlayers()) do
-        removeESP(plr)
-        removeChams(plr)
-    end
+    removeESP()
+    removeChams()
     if walkLoop then walkLoop:Disconnect() walkLoop=nil end
 end)
 
