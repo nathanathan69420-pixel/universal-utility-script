@@ -112,15 +112,13 @@ local function addESP(plr)
             local idx=plr.Team.TeamColor.Color.R+plr.Team.TeamColor.Color.G+plr.Team.TeamColor.Color.B
             color=teamColors[(idx%#teamColors)+1]
         end
-        local highlight=Instance.new("BoxHandleAdornment")
-        highlight.Name="ESPBox"
+        local highlight=Instance.new("Highlight")
+        highlight.Name="ESPHighlight"
         highlight.Adornee=char
-        highlight.Size=Vector3.new(4,6,2)
-        highlight.Color3=color
-        highlight.Transparency=0.45
-        highlight.AlwaysOnTop=true
-        highlight.ZIndex=10
-        highlight.Parent=char
+        highlight.FillTransparency=1 -- no fill
+        highlight.OutlineColor= color
+        highlight.OutlineTransparency=0.45 -- 55% visible
+        highlight.Parent=workspace
         highlights[char]=highlight
     end
 end
@@ -130,7 +128,7 @@ VisualsTab:CreateToggle({Name="Player ESP",CurrentValue=false,Flag="PlayerESP",C
     for _,plr in pairs(Players:GetPlayers()) do if Value then addESP(plr) else removeESP(plr) end end
 end})
 
--- Chams
+-- Chams (outline only, white, 55% transparency)
 local function removeChams(plr)
     local char=plr.Character
     if char and chamsParts[char] then
@@ -145,16 +143,13 @@ local function addChams(plr)
         chamsParts[char]={}
         for _,part in pairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
-                local box=Instance.new("BoxHandleAdornment")
-                box.Name="ChamsOutline"
-                box.Adornee=part
-                box.Size=part.Size
-                box.Color3=Color3.fromRGB(255,255,255)
-                box.Transparency=0.55
-                box.AlwaysOnTop=true
-                box.ZIndex=10
-                box.Parent=part
-                table.insert(chamsParts[char],box)
+                local outline=Instance.new("Highlight")
+                outline.Adornee=part
+                outline.FillTransparency=1
+                outline.OutlineColor=Color3.fromRGB(255,255,255)
+                outline.OutlineTransparency=0.45
+                outline.Parent=workspace
+                table.insert(chamsParts[char],outline)
             end
         end
     end
@@ -165,7 +160,7 @@ VisualsTab:CreateToggle({Name="Chams",CurrentValue=false,Flag="ChamsToggle",Call
     for _,plr in pairs(Players:GetPlayers()) do if Value then addChams(plr) else removeChams(plr) end end
 end})
 
--- Handle player joins/leaves
+-- Player join/leave handling
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function()
         if espEnabled then addESP(plr) end
