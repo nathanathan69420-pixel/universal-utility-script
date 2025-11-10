@@ -1,26 +1,33 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
 local Window = Rayfield:CreateWindow({
     Name = "Universal Utility Script",
     LoadingTitle = "This was made for educational purposes ;)",
     LoadingSubtitle = "Like and Subscribe",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "UniversalUtilityConfig",
-        FileName = "Settings"
-    }
+    ConfigurationSaving = {Enabled=true,FolderName="UniversalUtilityConfig",FileName="Settings"}
 })
 
-local MovementTab = Window:CreateTab("Movement", 4483362458)
-local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+local MovementTab = Window:CreateTab("Movement",4483362458)
+local VisualsTab = Window:CreateTab("Visuals",4483362458)
+local TrollTab = Window:CreateTab("Troll",4483362458)
 
--- WalkSpeed
-local selectedSpeed = 16
-local walkspeedEnabled = false
-local originalWalkSpeed = nil
+local walkspeedEnabled=false
+local selectedSpeed=16
+local jumpEnabled=false
+local jumpPowerValue=50
+local flyEnabled=false
+local flySpeed=50
+local flyLoop=nil
+local noclipEnabled=false
+local espEnabled=false
+local highlights={}
+local flingEnabled=false
+local teamColors={Color3.fromRGB(0,255,0),Color3.fromRGB(255,0,0),Color3.fromRGB(0,0,255),Color3.fromRGB(255,255,0),Color3.fromRGB(0,255,255),Color3.fromRGB(255,0,255)}
+local walkLoop=nil
 
 local function getHumanoid()
     if player.Character then
@@ -28,144 +35,125 @@ local function getHumanoid()
     end
 end
 
-RunService.Heartbeat:Connect(function()
-    local humanoid = getHumanoid()
-    if humanoid then
-        if not originalWalkSpeed then originalWalkSpeed = humanoid.WalkSpeed end
-        if walkspeedEnabled then
-            humanoid.WalkSpeed = selectedSpeed
+-- WalkSpeed Slider + Toggle (looping)
+MovementTab:CreateSlider({
+    Name="WalkSpeed",Range={16,100},Increment=0.5,Suffix="Speed",CurrentValue=16,Flag="WalkSpeedSlider",
+    Callback=function(Value) selectedSpeed=Value end
+})
+
+MovementTab:CreateToggle({
+    Name="Enable WalkSpeed",CurrentValue=false,Flag="WalkSpeedToggle",
+    Callback=function(Value)
+        walkspeedEnabled=Value
+        local humanoid=getHumanoid()
+        if Value and humanoid then
+            if walkLoop then walkLoop:Disconnect() end
+            walkLoop=RunService.Heartbeat:Connect(function()
+                if humanoid and walkspeedEnabled then
+                    humanoid.WalkSpeed=selectedSpeed
+                end
+            end)
         else
-            humanoid.WalkSpeed = originalWalkSpeed
+            if walkLoop then walkLoop:Disconnect() walkLoop=nil end
+            if humanoid then humanoid.WalkSpeed=16 end
         end
     end
-end)
-
-local WalkSpeedSlider = MovementTab:CreateSlider({
-    Name = "WalkSpeed",
-    Range = {16, 100},
-    Increment = 0.5,
-    Suffix = "Speed",
-    CurrentValue = 16,
-    Flag = "WalkSpeedSlider",
-    Callback = function(Value)
-        selectedSpeed = Value
-    end,
 })
 
-local WalkSpeedToggle = MovementTab:CreateToggle({
-    Name = "Enable WalkSpeed",
-    CurrentValue = false,
-    Flag = "WalkSpeedToggle",
-    Callback = function(Value)
-        walkspeedEnabled = Value
-    end,
-})
+-- JumpPower
+MovementTab:CreateSlider({Name="JumpPower",Range={50,500},Increment=5,Suffix="JumpPower",CurrentValue=50,Flag="JumpPowerSlider",Callback=function(Value) jumpPowerValue=Value end})
+MovementTab:CreateToggle({Name="Jumppower toggle",CurrentValue=false,Flag="JumpPowerToggle",Callback=function(Value) jumpEnabled=Value end})
 
--- Apply saved config immediately
-local savedConfig = Rayfield:LoadConfiguration()
-if savedConfig then
-    selectedSpeed = WalkSpeedSlider:Load()
-    walkspeedEnabled = WalkSpeedToggle:Load()
-end
+-- Fly Mode
+MovementTab:CreateToggle({Name="Fly Mode",CurrentValue=false,Flag="FlyToggle",Callback=function(Value)
+    flyEnabled=Value
+    local h=getHumanoid()
+    if flyLoop then flyLoop:Disconnect() flyLoop=nil end
+    if flyEnabled and h then
+        h.PlatformStand=true
+        flyLoop=RunService.Heartbeat:Connect(function()
+            local camCF=workspace.CurrentCamera.CFrame
+            local moveDir=Vector3.new()
+            if UIS:IsKeyDown(Enum.KeyCode.W) then moveDir=moveDir+camCF.LookVector end
+            if UIS:IsKeyDown(Enum.KeyCode.S) then moveDir=moveDir-camCF.LookVector end
+            if UIS:IsKeyDown(Enum.KeyCode.A) then moveDir=moveDir-camCF.RightVector end
+            if UIS:IsKeyDown(Enum.KeyCode.D) then moveDir=moveDir+camCF.RightVector end
+            if moveDir.Magnitude>0 then h.Parent:PivotTo(h.Parent:GetPivot()+moveDir.Unit*flySpeed*RunService.RenderStepped:Wait()) end
+        end)
+    elseif h then h.PlatformStand=false end
+end})
+MovementTab:CreateSlider({Name="Fly Speed",Range={10,200},Increment=5,Suffix="Speed",CurrentValue=50,Flag="FlySpeedSlider",Callback=function(Value) flySpeed=Value end})
 
--- Visuals ESP
-local espEnabled = false
-local espColor = Color3.fromRGB(255,255,255)
-local highlights = {}
-local nametags = {}
+-- NoClip
+MovementTab:CreateToggle({Name="NoClip",CurrentValue=false,Flag="NoClipToggle",Callback=function(Value) noclipEnabled=Value end})
 
-local function removeESP(plr)
-    local char = plr.Character
-    if char then
-        if highlights[char] then highlights[char]:Destroy() highlights[char] = nil end
-        if nametags[char] then nametags[char]:Destroy() nametags[char] = nil end
-    end
-end
-
-local function addESP(plr)
-    local char = plr.Character
-    if char and plr ~= player then
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "ESPHighlight"
-        highlight.Adornee = char
-        highlight.FillColor = espColor
-        highlight.FillTransparency = 0.55
-        highlight.OutlineColor = espColor
-        highlight.OutlineTransparency = 0
-        highlight.Parent = char
-        highlights[char] = highlight
-
-        local head = char:FindFirstChild("Head")
-        if head then
-            local billboard = Instance.new("BillboardGui")
-            billboard.Name = "Nametag"
-            billboard.Adornee = head
-            billboard.Size = UDim2.new(0, 120, 0, 30)
-            billboard.StudsOffset = Vector3.new(0, 2.25, 0)
-            billboard.AlwaysOnTop = true
-
-            local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1,0,1,0)
-            label.BackgroundTransparency = 1
-            label.Text = plr.Name
-            label.TextColor3 = espColor
-            label.TextStrokeTransparency = 0
-            label.TextScaled = true
-            label.Parent = billboard
-
-            billboard.Parent = workspace
-            nametags[char] = billboard
-        end
-    end
-end
-
-VisualsTab:CreateToggle({
-    Name = "Player ESP",
-    CurrentValue = false,
-    Flag = "PlayerESP",
-    Callback = function(Value)
-        espEnabled = Value
-        for _, plr in pairs(Players:GetPlayers()) do
-            if Value then
-                addESP(plr)
-            else
-                removeESP(plr)
+RunService.Heartbeat:Connect(function()
+    local h=getHumanoid()
+    if h then
+        if jumpEnabled then h.JumpPower=jumpPowerValue else h.JumpPower=50 end
+        if noclipEnabled then
+            for _,part in pairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then part.CanCollide=false end
             end
         end
     end
-})
+end)
 
-VisualsTab:CreateColorPicker({
-    Name = "ESP Color",
-    CurrentColor = espColor,
-    Flag = "ESPColor",
-    Callback = function(Color)
-        espColor = Color
-        for _, h in pairs(highlights) do
-            h.FillColor = Color
-            h.OutlineColor = Color
+-- Team-based Box ESP
+local function removeESP(plr)
+    local char=plr.Character
+    if char and highlights[char] then highlights[char]:Destroy() highlights[char]=nil end
+end
+
+local function addESP(plr)
+    local char=plr.Character
+    if char and plr~=player then
+        local color
+        if plr.Team==player.Team then
+            color=Color3.fromRGB(0,255,0)
+        else
+            local idx=plr.Team.TeamColor.Color.R+plr.Team.TeamColor.Color.G+plr.Team.TeamColor.Color.B
+            color=teamColors[(idx%#teamColors)+1]
         end
-        for _, billboard in pairs(nametags) do
-            local label = billboard:FindFirstChildOfClass("TextLabel")
-            if label then label.TextColor3 = Color end
+        local highlight=Instance.new("BoxHandleAdornment")
+        highlight.Name="ESPBox"
+        highlight.Adornee=char
+        highlight.Size=Vector3.new(4,6,2)
+        highlight.Color3=color
+        highlight.Transparency=0.45
+        highlight.AlwaysOnTop=true
+        highlight.ZIndex=10
+        highlight.Parent=char
+        highlights[char]=highlight
+    end
+end
+
+VisualsTab:CreateToggle({Name="Player ESP",CurrentValue=false,Flag="PlayerESP",Callback=function(Value)
+    espEnabled=Value
+    for _,plr in pairs(Players:GetPlayers()) do
+        if Value then addESP(plr) else removeESP(plr) end
+    end
+end})
+
+Players.PlayerAdded:Connect(function(plr) plr.CharacterAdded:Connect(function() if espEnabled then addESP(plr) end end) end)
+Players.PlayerRemoving:Connect(function(plr) removeESP(plr) end)
+for _,plr in pairs(Players:GetPlayers()) do plr.CharacterAdded:Connect(function() if espEnabled then addESP(plr) end end) end
+
+-- Troll Tab Fling
+TrollTab:CreateToggle({Name="Fling",CurrentValue=false,Flag="FlingToggle",Callback=function(Value)
+    flingEnabled=Value
+    local char=player.Character
+    if char then
+        local root=char:FindFirstChild("HumanoidRootPart")
+        if flingEnabled and root then
+            coroutine.wrap(function()
+                while flingEnabled and root do
+                    root.CFrame=root.CFrame*CFrame.Angles(0,math.rad(1000),0)
+                    task.wait()
+                end
+            end)()
         end
     end
-})
-
-Players.PlayerAdded:Connect(function(plr)
-    plr.CharacterAdded:Connect(function()
-        if espEnabled then addESP(plr) end
-    end)
-end)
-
-Players.PlayerRemoving:Connect(function(plr)
-    removeESP(plr)
-end)
-
-for _, plr in pairs(Players:GetPlayers()) do
-    plr.CharacterAdded:Connect(function()
-        if espEnabled then addESP(plr) end
-    end)
-end
+end})
 
 Rayfield:LoadConfiguration()
