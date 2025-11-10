@@ -15,11 +15,6 @@ local VisualsTab = Window:CreateTab("Visuals",4483362458)
 
 local walkspeedEnabled=false
 local selectedSpeed=16
-local jumpEnabled=false
-local jumpPowerValue=50
-local flyEnabled=false
-local flySpeed=50
-local flyLoop=nil
 local noclipEnabled=false
 local espEnabled=false
 local highlights={}
@@ -48,43 +43,13 @@ MovementTab:CreateToggle({Name="Enable WalkSpeed",CurrentValue=false,Flag="WalkS
     end
 end})
 
-MovementTab:CreateSlider({Name="JumpPower",Range={50,500},Increment=5,Suffix="JumpPower",CurrentValue=50,Flag="JumpPowerSlider",Callback=function(Value) jumpPowerValue=Value end})
-MovementTab:CreateToggle({Name="Jumppower toggle",CurrentValue=false,Flag="JumpPowerToggle",Callback=function(Value) jumpEnabled=Value end})
-
-MovementTab:CreateToggle({Name="Fly Mode",CurrentValue=false,Flag="FlyToggle",Callback=function(Value)
-    flyEnabled=Value
-    local char=player.Character
-    if flyLoop then flyLoop:Disconnect() flyLoop=nil end
-    if flyEnabled and char then
-        local hrp=char:FindFirstChild("HumanoidRootPart")
-        local h=getHumanoid()
-        if h and hrp then
-            h.PlatformStand=true
-            flyLoop=RunService.Heartbeat:Connect(function(dt)
-                local camCF=workspace.CurrentCamera.CFrame
-                local moveDir=Vector3.new()
-                if UIS:IsKeyDown(Enum.KeyCode.W) then moveDir=moveDir+camCF.LookVector end
-                if UIS:IsKeyDown(Enum.KeyCode.S) then moveDir=moveDir-camCF.LookVector end
-                if UIS:IsKeyDown(Enum.KeyCode.A) then moveDir=moveDir-camCF.RightVector end
-                if UIS:IsKeyDown(Enum.KeyCode.D) then moveDir=moveDir+camCF.RightVector end
-                if UIS:IsKeyDown(Enum.KeyCode.Space) then moveDir=moveDir+Vector3.new(0,1,0) end
-                if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir=moveDir-Vector3.new(0,1,0) end
-                if moveDir.Magnitude>0 then hrp.CFrame=hrp.CFrame+moveDir.Unit*flySpeed*dt end
-            end)
-        end
-    elseif h then h.PlatformStand=false end
-end})
-MovementTab:CreateSlider({Name="Fly Speed",Range={10,200},Increment=5,Suffix="Speed",CurrentValue=50,Flag="FlySpeedSlider",Callback=function(Value) flySpeed=Value end})
-
 MovementTab:CreateToggle({Name="NoClip",CurrentValue=false,Flag="NoClipToggle",Callback=function(Value) noclipEnabled=Value end})
 
 RunService.Heartbeat:Connect(function()
-    local h=getHumanoid()
-    if h then
-        if jumpEnabled then h.JumpPower=jumpPowerValue else h.JumpPower=50 end
-        if noclipEnabled then
-            for _,part in pairs(player.Character:GetDescendants()) do
-                if part:IsA("BasePart") and part.CanCollide then part.CanCollide=false end
+    if noclipEnabled and player.Character then
+        for _,part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide then
+                part.CanCollide=false
             end
         end
     end
