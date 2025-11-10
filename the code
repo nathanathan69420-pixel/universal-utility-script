@@ -30,6 +30,7 @@ local chamsEnabled=false
 local chamsParts={}
 local teamColors={Color3.fromRGB(0,255,0),Color3.fromRGB(255,0,0),Color3.fromRGB(0,0,255),Color3.fromRGB(255,255,0),Color3.fromRGB(0,255,255),Color3.fromRGB(255,0,255)}
 local walkLoop=nil
+local flingConnection=nil
 
 local function getHumanoid()
     if player.Character then
@@ -37,7 +38,7 @@ local function getHumanoid()
     end
 end
 
--- WalkSpeed Slider + Toggle (looping)
+-- WalkSpeed Slider + Toggle
 MovementTab:CreateSlider({Name="WalkSpeed",Range={16,100},Increment=0.5,Suffix="Speed",CurrentValue=16,Flag="WalkSpeedSlider",Callback=function(Value) selectedSpeed=Value end})
 MovementTab:CreateToggle({Name="Enable WalkSpeed",CurrentValue=false,Flag="WalkSpeedToggle",Callback=function(Value)
     walkspeedEnabled=Value
@@ -167,24 +168,43 @@ VisualsTab:CreateToggle({Name="Chams",CurrentValue=false,Flag="ChamsToggle",Call
     for _,plr in pairs(Players:GetPlayers()) do if Value then addChams(plr) else removeChams(plr) end end
 end})
 
--- Troll Tab Fling
+-- Troll Tab Fling (touch-based)
 TrollTab:CreateToggle({Name="Fling",CurrentValue=false,Flag="FlingToggle",Callback=function(Value)
     flingEnabled=Value
     local char=player.Character
     if char then
-        local root=char:FindFirstChild("HumanoidRootPart")
-        if flingEnabled and root then
+        local hrp=char:FindFirstChild("HumanoidRootPart")
+        if flingConnection then flingConnection:Disconnect() flingConnection=nil end
+        if Value and hrp then
+            -- Spin visual
             coroutine.wrap(function()
-                while flingEnabled and root do
-                    root.CFrame=root.CFrame*CFrame.Angles(0,math.rad(5000),0)
+                while flingEnabled and hrp do
+                    hrp.CFrame=hrp.CFrame*CFrame.Angles(0,math.rad(5000),0)
                     task.wait()
                 end
             end)()
+            -- Touch fling
+            flingConnection=hrp.Touched:Connect(function(hit)
+                local plr=Players:GetPlayerFromCharacter(hit.Parent)
+                if plr and plr~=player then
+                    local otherHRP=hit.Parent:FindFirstChild("HumanoidRootPart")
+                    if otherHRP then
+                        local bodyVelocity=Instance.new("BodyVelocity")
+                        bodyVelocity.Velocity=(otherHRP.Position-hrp.Position).Unit*200
+                        bodyVelocity.MaxForce=Vector3.new(1e5,1e5,1e5)
+                        bodyVelocity.P=1e4
+                        bodyVelocity.Parent=otherHRP
+                        game.Debris:AddItem(bodyVelocity,0.2)
+                    end
+                end
+            end)
         end
+    else
+        if flingConnection then flingConnection:Disconnect() flingConnection=nil end
     end
 end})
 
--- Player joins/leaves handling
+-- Handle player joins/leaves
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function()
         if espEnabled then addESP(plr) end
