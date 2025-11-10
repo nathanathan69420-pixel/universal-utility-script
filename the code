@@ -13,7 +13,6 @@ local Window = Rayfield:CreateWindow({
 
 local MovementTab = Window:CreateTab("Movement",4483362458)
 local VisualsTab = Window:CreateTab("Visuals",4483362458)
-local CarsTab = Window:CreateTab("Cars",4483362458)
 
 local walkspeedEnabled=false
 local selectedSpeed=16
@@ -21,12 +20,9 @@ local noclipEnabled=false
 local espEnabled=false
 local chamsEnabled=false
 local fullbrightEnabled=false
-local carSpeedEnabled=false
-local carSpeedMultiplier=1
 local highlights={}
 local chamsParts={}
 local walkLoop=nil
-local carLoop=nil
 local originalLighting={
     Brightness=Lighting.Brightness,
     ClockTime=Lighting.ClockTime,
@@ -175,38 +171,6 @@ for _,plr in pairs(Players:GetPlayers()) do
     end)
 end
 
-CarsTab:CreateSlider({Name="Car Speed Multiplier",Range={1,50},Increment=1,Suffix="x",CurrentValue=1,Flag="CarSpeedSlider",Callback=function(Value) carSpeedMultiplier=Value end})
-
-CarsTab:CreateToggle({Name="Car Speed Modifier",CurrentValue=false,Flag="CarSpeedToggle",Callback=function(Value)
-    carSpeedEnabled=Value
-    if carLoop then carLoop:Disconnect() carLoop=nil end
-    if Value then
-        carLoop=RunService.Heartbeat:Connect(function()
-            if not carSpeedEnabled then return end
-            local seat=player.Character and player.Character:FindFirstChildOfClass("VehicleSeat")
-            if seat then
-                if not seat:FindFirstChild("OriginalMaxSpeed") then
-                    local val=Instance.new("NumberValue")
-                    val.Name="OriginalMaxSpeed"
-                    val.Value=seat.MaxSpeed
-                    val.Parent=seat
-                end
-                seat.MaxSpeed=seat.OriginalMaxSpeed.Value*carSpeedMultiplier
-                local root=seat.Parent:FindFirstChild("HumanoidRootPart") or seat.Parent:FindFirstChildWhichIsA("BasePart")
-                if root then
-                    seat.AssemblyLinearVelocity=root.CFrame.LookVector*seat.MaxSpeed
-                end
-            end
-        end)
-    else
-        local seat=player.Character and player.Character:FindFirstChildOfClass("VehicleSeat")
-        if seat and seat:FindFirstChild("OriginalMaxSpeed") then
-            seat.MaxSpeed=seat.OriginalMaxSpeed.Value
-            seat.AssemblyLinearVelocity=Vector3.new(0,seat.AssemblyLinearVelocity.Y,0)
-        end
-    end
-end})
-
 local humanoid=getHumanoid()
 if humanoid then humanoid.WalkSpeed=16 end
 walkspeedEnabled=false
@@ -214,8 +178,6 @@ noclipEnabled=false
 espEnabled=false
 chamsEnabled=false
 fullbrightEnabled=false
-carSpeedEnabled=false
-carSpeedMultiplier=1
 removeESP()
 removeChams()
 Lighting.Brightness=originalLighting.Brightness
@@ -231,20 +193,13 @@ Window:OnClose(function()
     espEnabled=false
     chamsEnabled=false
     fullbrightEnabled=false
-    carSpeedEnabled=false
     removeESP()
     removeChams()
     Lighting.Brightness=originalLighting.Brightness
     Lighting.ClockTime=originalLighting.ClockTime
     Lighting.FogEnd=originalLighting.FogEnd
     Lighting.Ambient=originalLighting.Ambient
-    local seat=player.Character and player.Character:FindFirstChildOfClass("VehicleSeat")
-    if seat and seat:FindFirstChild("OriginalMaxSpeed") then
-        seat.MaxSpeed=seat.OriginalMaxSpeed.Value
-        seat.AssemblyLinearVelocity=Vector3.new(0,0,0)
-    end
     if walkLoop then walkLoop:Disconnect() walkLoop=nil end
-    if carLoop then carLoop:Disconnect() carLoop=nil end
 end)
 
 Rayfield:LoadConfiguration()
