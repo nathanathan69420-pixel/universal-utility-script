@@ -23,6 +23,7 @@ local selectedSpeed = 16
 local originalWalkSpeed = nil
 local holdingShift = false
 local walkspeedConnection = nil
+local leftShiftEnabled = false
 
 local function setLocalHumanoidWalkSpeed(value)
     if player and player.Character then
@@ -42,7 +43,7 @@ local function startWalkSpeedLoop()
         end
     end
     walkspeedConnection = RunService.Heartbeat:Connect(function()
-        if holdingShift then
+        if leftShiftEnabled and holdingShift then
             setLocalHumanoidWalkSpeed(selectedSpeed)
         else
             if originalWalkSpeed then
@@ -54,13 +55,22 @@ end
 
 MovementTab:CreateSlider({
     Name = "WalkSpeed",
-    Range = {16, 21},
+    Range = {16, 100},
     Increment = 0.5,
     Suffix = "Speed",
     CurrentValue = 16,
     Flag = "WalkSpeedSlider",
     Callback = function(Value)
         selectedSpeed = Value
+    end,
+})
+
+MovementTab:CreateToggle({
+    Name = "LeftShift to run",
+    CurrentValue = false,
+    Flag = "LeftShiftToggle",
+    Callback = function(Value)
+        leftShiftEnabled = Value
     end,
 })
 
