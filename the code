@@ -176,6 +176,7 @@ for _,plr in pairs(Players:GetPlayers()) do
 end
 
 CarsTab:CreateSlider({Name="Car Speed Multiplier",Range={1,50},Increment=1,Suffix="x",CurrentValue=1,Flag="CarSpeedSlider",Callback=function(Value) carSpeedMultiplier=Value end})
+
 CarsTab:CreateToggle({Name="Car Speed Modifier",CurrentValue=false,Flag="CarSpeedToggle",Callback=function(Value)
     carSpeedEnabled=Value
     if carLoop then carLoop:Disconnect() carLoop=nil end
@@ -191,12 +192,17 @@ CarsTab:CreateToggle({Name="Car Speed Modifier",CurrentValue=false,Flag="CarSpee
                     val.Parent=seat
                 end
                 seat.MaxSpeed=seat.OriginalMaxSpeed.Value*carSpeedMultiplier
+                local root=seat.Parent:FindFirstChild("HumanoidRootPart") or seat.Parent:FindFirstChildWhichIsA("BasePart")
+                if root then
+                    seat.AssemblyLinearVelocity=root.CFrame.LookVector*seat.MaxSpeed
+                end
             end
         end)
     else
         local seat=player.Character and player.Character:FindFirstChildOfClass("VehicleSeat")
         if seat and seat:FindFirstChild("OriginalMaxSpeed") then
             seat.MaxSpeed=seat.OriginalMaxSpeed.Value
+            seat.AssemblyLinearVelocity=Vector3.new(0,seat.AssemblyLinearVelocity.Y,0)
         end
     end
 end})
@@ -235,6 +241,7 @@ Window:OnClose(function()
     local seat=player.Character and player.Character:FindFirstChildOfClass("VehicleSeat")
     if seat and seat:FindFirstChild("OriginalMaxSpeed") then
         seat.MaxSpeed=seat.OriginalMaxSpeed.Value
+        seat.AssemblyLinearVelocity=Vector3.new(0,0,0)
     end
     if walkLoop then walkLoop:Disconnect() walkLoop=nil end
     if carLoop then carLoop:Disconnect() carLoop=nil end
