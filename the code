@@ -86,7 +86,7 @@ end
 local function addESP(plr)
     local char = plr.Character
     if char and plr ~= player then
-        local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChildWhichIsA("BasePart")
+        local hrp = char:FindFirstChild("HumanoidRootPart")
         local hum = char:FindFirstChildWhichIsA("Humanoid")
         if not hrp or not hum then return end
 
@@ -102,9 +102,8 @@ local function addESP(plr)
         local depth = 1
         local height = hum.HipHeight*2 + 2
         box.Size = Vector3.new(width, height, depth)
-        box.CFrame = hrp.CFrame
-        box.Parent = hrp
 
+        box.Parent = hrp
         highlights[char] = box
     end
 end
