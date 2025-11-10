@@ -21,30 +21,24 @@ local VisualsTab = Window:CreateTab("Visuals", 4483362458)
 local selectedSpeed = 16
 local walkspeedEnabled = false
 local originalWalkSpeed = nil
-local walkspeedConnection = nil
 
-local function setWalkSpeed(value)
+local function getHumanoid()
     if player.Character then
-        local h = player.Character:FindFirstChildWhichIsA("Humanoid")
-        if h then h.WalkSpeed = value end
+        return player.Character:FindFirstChildWhichIsA("Humanoid")
     end
 end
 
-local function startWalkSpeedLoop()
-    if walkspeedConnection then return end
-    walkspeedConnection = RunService.Heartbeat:Connect(function()
-        if player.Character then
-            local h = player.Character:FindFirstChildWhichIsA("Humanoid")
-            if not h then return end
-            if not originalWalkSpeed then originalWalkSpeed = h.WalkSpeed end
-            if walkspeedEnabled then
-                h.WalkSpeed = selectedSpeed
-            else
-                h.WalkSpeed = originalWalkSpeed
-            end
+RunService.Heartbeat:Connect(function()
+    local humanoid = getHumanoid()
+    if humanoid then
+        if not originalWalkSpeed then originalWalkSpeed = humanoid.WalkSpeed end
+        if walkspeedEnabled then
+            humanoid.WalkSpeed = selectedSpeed
+        else
+            humanoid.WalkSpeed = originalWalkSpeed
         end
-    end)
-end
+    end
+end)
 
 MovementTab:CreateSlider({
     Name = "WalkSpeed",
@@ -66,8 +60,6 @@ MovementTab:CreateToggle({
         walkspeedEnabled = Value
     end,
 })
-
-startWalkSpeedLoop()
 
 -- Visuals
 local espEnabled = false
