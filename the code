@@ -67,6 +67,53 @@ local espColor = Color3.fromRGB(255,255,255)
 local highlights = {}
 local nametags = {}
 
+local function removeESP(plr)
+    local char = plr.Character
+    if char then
+        if highlights[char] then highlights[char]:Destroy() highlights[char] = nil end
+        if nametags[char] then nametags[char]:Destroy() nametags[char] = nil end
+    end
+end
+
+local function addESP(plr)
+    local char = plr.Character
+    if char and plr ~= player then
+        -- Highlight
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "ESPHighlight"
+        highlight.Adornee = char
+        highlight.FillColor = espColor
+        highlight.FillTransparency = 0.55
+        highlight.OutlineColor = espColor
+        highlight.OutlineTransparency = 0
+        highlight.Parent = char
+        highlights[char] = highlight
+
+        -- Nametag
+        local head = char:FindFirstChild("Head")
+        if head then
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "Nametag"
+            billboard.Adornee = head
+            billboard.Size = UDim2.new(0, 120, 0, 30)
+            billboard.StudsOffset = Vector3.new(0, 1.5, 0)
+            billboard.AlwaysOnTop = true
+
+            local label = Instance.new("TextLabel")
+            label.Size = UDim2.new(1,0,1,0)
+            label.BackgroundTransparency = 1
+            label.Text = plr.Name
+            label.TextColor3 = espColor
+            label.TextStrokeTransparency = 0
+            label.TextScaled = true
+            label.Parent = billboard
+
+            billboard.Parent = workspace
+            nametags[char] = billboard
+        end
+    end
+end
+
 VisualsTab:CreateToggle({
     Name = "Player ESP",
     CurrentValue = false,
@@ -74,48 +121,10 @@ VisualsTab:CreateToggle({
     Callback = function(Value)
         espEnabled = Value
         for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= player then
-                local char = plr.Character
-                if char then
-                    if Value then
-                        -- Highlight
-                        local highlight = Instance.new("Highlight")
-                        highlight.Name = "ESPHighlight"
-                        highlight.Adornee = char
-                        highlight.FillColor = espColor
-                        highlight.FillTransparency = 0.55
-                        highlight.OutlineColor = espColor
-                        highlight.OutlineTransparency = 0
-                        highlight.Parent = char
-                        highlights[char] = highlight
-
-                        -- Nametag
-                        local head = char:FindFirstChild("Head")
-                        if head then
-                            local billboard = Instance.new("BillboardGui")
-                            billboard.Name = "Nametag"
-                            billboard.Adornee = head
-                            billboard.Size = UDim2.new(0, 120, 0, 30)
-                            billboard.StudsOffset = Vector3.new(0, 1.5, 0) -- lower than before
-                            billboard.AlwaysOnTop = true
-
-                            local label = Instance.new("TextLabel")
-                            label.Size = UDim2.new(1,0,1,0)
-                            label.BackgroundTransparency = 1
-                            label.Text = plr.Name
-                            label.TextColor3 = espColor
-                            label.TextStrokeTransparency = 0
-                            label.TextScaled = true
-                            label.Parent = billboard
-
-                            billboard.Parent = workspace
-                            nametags[char] = billboard
-                        end
-                    else
-                        if highlights[char] then highlights[char]:Destroy() highlights[char] = nil end
-                        if nametags[char] then nametags[char]:Destroy() nametags[char] = nil end
-                    end
-                end
+            if Value then
+                addESP(plr)
+            else
+                removeESP(plr)
             end
         end
     end
@@ -137,5 +146,22 @@ VisualsTab:CreateColorPicker({
         end
     end
 })
+
+-- Automatically refresh ESP when players respawn
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function()
+        if espEnabled then addESP(plr) end
+    end)
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    removeESP(plr)
+end)
+
+for _, plr in pairs(Players:GetPlayers()) do
+    plr.CharacterAdded:Connect(function()
+        if espEnabled then addESP(plr) end
+    end)
+end
 
 Rayfield:LoadConfiguration()
