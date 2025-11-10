@@ -26,7 +26,6 @@ local espEnabled=false
 local highlights={}
 local chamsEnabled=false
 local chamsParts={}
-local teamColors={Color3.fromRGB(0,255,0),Color3.fromRGB(255,0,0),Color3.fromRGB(0,0,255),Color3.fromRGB(255,255,0),Color3.fromRGB(0,255,255),Color3.fromRGB(255,0,255)}
 local walkLoop=nil
 
 local function getHumanoid()
@@ -96,7 +95,15 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Team-based Box ESP
+-- Team-based Box ESP (Player ESP)
+local function getTeamColor(plr)
+    if plr.Team == player.Team then
+        return Color3.fromRGB(0,255,0)
+    else
+        return Color3.fromRGB(255,0,0)
+    end
+end
+
 local function removeESP(plr)
     local char=plr.Character
     if char and highlights[char] then highlights[char]:Destroy() highlights[char]=nil end
@@ -105,21 +112,16 @@ end
 local function addESP(plr)
     local char=plr.Character
     if char and plr~=player then
-        local color
-        if plr.Team==player.Team then
-            color=Color3.fromRGB(0,255,0)
-        else
-            local idx=plr.Team.TeamColor.Color.R+plr.Team.TeamColor.Color.G+plr.Team.TeamColor.Color.B
-            color=teamColors[(idx%#teamColors)+1]
-        end
-        local highlight=Instance.new("Highlight")
-        highlight.Name="ESPHighlight"
-        highlight.Adornee=char
-        highlight.FillTransparency=1 -- no fill
-        highlight.OutlineColor= color
-        highlight.OutlineTransparency=0.45 -- 55% visible
-        highlight.Parent=workspace
-        highlights[char]=highlight
+        local box = Instance.new("BoxHandleAdornment")
+        box.Name="ESPBox"
+        box.Adornee=char
+        box.Size=Vector3.new(4,6,2)
+        box.Color3=getTeamColor(plr)
+        box.Transparency=0.45
+        box.AlwaysOnTop=true
+        box.ZIndex=10
+        box.Parent=char
+        highlights[char]=box
     end
 end
 
@@ -128,7 +130,7 @@ VisualsTab:CreateToggle({Name="Player ESP",CurrentValue=false,Flag="PlayerESP",C
     for _,plr in pairs(Players:GetPlayers()) do if Value then addESP(plr) else removeESP(plr) end end
 end})
 
--- Chams (outline only, white, 55% transparency)
+-- Chams (outline only, white, 55% visible)
 local function removeChams(plr)
     local char=plr.Character
     if char and chamsParts[char] then
@@ -146,7 +148,7 @@ local function addChams(plr)
                 local outline=Instance.new("Highlight")
                 outline.Adornee=part
                 outline.FillTransparency=1
-                outline.OutlineColor=Color3.fromRGB(255,255,255)
+                outline.OutlineColor=getTeamColor(plr)
                 outline.OutlineTransparency=0.45
                 outline.Parent=workspace
                 table.insert(chamsParts[char],outline)
