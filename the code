@@ -65,6 +65,7 @@ MovementTab:CreateToggle({
 local espEnabled = false
 local espColor = Color3.fromRGB(255,255,255)
 local highlights = {}
+local nametags = {}
 
 VisualsTab:CreateToggle({
     Name = "Player ESP",
@@ -76,8 +77,8 @@ VisualsTab:CreateToggle({
             if plr ~= player then
                 local char = plr.Character
                 if char then
-                    local h = char:FindFirstChildWhichIsA("Humanoid")
                     if Value then
+                        -- Highlight
                         local highlight = Instance.new("Highlight")
                         highlight.Name = "ESPHighlight"
                         highlight.Adornee = char
@@ -89,47 +90,30 @@ VisualsTab:CreateToggle({
                         highlights[char] = highlight
 
                         -- Nametag
-                        local billboard = Instance.new("BillboardGui")
-                        billboard.Name = "Nametag"
-                        billboard.Adornee = char:FindFirstChild("Head")
-                        billboard.Size = UDim2.new(0, 120, 0, 50)
-                        billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-                        billboard.AlwaysOnTop = true
+                        local head = char:FindFirstChild("Head")
+                        if head then
+                            local billboard = Instance.new("BillboardGui")
+                            billboard.Name = "Nametag"
+                            billboard.Adornee = head
+                            billboard.Size = UDim2.new(0, 120, 0, 30)
+                            billboard.StudsOffset = Vector3.new(0, 1.5, 0) -- lower than before
+                            billboard.AlwaysOnTop = true
 
-                        local frame = Instance.new("Frame")
-                        frame.Size = UDim2.new(1, 0, 1, 0)
-                        frame.BackgroundTransparency = 1
-                        frame.Parent = billboard
+                            local label = Instance.new("TextLabel")
+                            label.Size = UDim2.new(1,0,1,0)
+                            label.BackgroundTransparency = 1
+                            label.Text = plr.Name
+                            label.TextColor3 = espColor
+                            label.TextStrokeTransparency = 0
+                            label.TextScaled = true
+                            label.Parent = billboard
 
-                        local nameLabel = Instance.new("TextLabel")
-                        nameLabel.Size = UDim2.new(1,0,0.6,0)
-                        nameLabel.Position = UDim2.new(0,0,0,0)
-                        nameLabel.BackgroundTransparency = 1
-                        nameLabel.Text = plr.Name
-                        nameLabel.TextColor3 = espColor
-                        nameLabel.TextStrokeTransparency = 0
-                        nameLabel.TextScaled = true
-                        nameLabel.Parent = frame
-
-                        local healthBar = Instance.new("Frame")
-                        healthBar.Size = UDim2.new(1,0,0.2,0)
-                        healthBar.Position = UDim2.new(0,0,0.75,0)
-                        healthBar.BackgroundColor3 = Color3.fromRGB(0,255,0)
-                        healthBar.BorderSizePixel = 0
-                        healthBar.Parent = frame
-
-                        billboard.Parent = workspace
-
-                        RunService.RenderStepped:Connect(function()
-                            if h.Health > 0 then
-                                local percent = math.clamp(h.Health/h.MaxHealth,0,1)
-                                healthBar.Size = UDim2.new(percent,0,0.2,0)
-                                nameLabel.Text = plr.Name .. " | " .. math.floor(h.Health)
-                            end
-                        end)
+                            billboard.Parent = workspace
+                            nametags[char] = billboard
+                        end
                     else
                         if highlights[char] then highlights[char]:Destroy() highlights[char] = nil end
-                        if char:FindFirstChild("Nametag") then char.Nametag:Destroy() end
+                        if nametags[char] then nametags[char]:Destroy() nametags[char] = nil end
                     end
                 end
             end
@@ -146,6 +130,10 @@ VisualsTab:CreateColorPicker({
         for _, h in pairs(highlights) do
             h.FillColor = Color
             h.OutlineColor = Color
+        end
+        for _, billboard in pairs(nametags) do
+            local label = billboard:FindFirstChildOfClass("TextLabel")
+            if label then label.TextColor3 = Color end
         end
     end
 })
