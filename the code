@@ -1,9 +1,18 @@
-local Neverlose_Main = loadstring(game:HttpGet("https://github.com/Mana42138/Neverlose-UI/blob/main/Source.lua"))()
-
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local player = Players.LocalPlayer
+
+local Window = Rayfield:CreateWindow({
+    Name = "Universal Utility Script",
+    LoadingTitle = "This was made for educational purposes ;)",
+    LoadingSubtitle = "Like and Subscribe",
+    ConfigurationSaving = {Enabled=true,FolderName="UniversalUtilityConfig",FileName="Settings"}
+})
+
+local MovementTab = Window:CreateTab("Movement",4483362458)
+local VisualsTab = Window:CreateTab("Visuals",4483362458)
 
 local walkspeedEnabled=false
 local selectedSpeed=16
@@ -27,35 +36,29 @@ local function getHumanoid()
     end
 end
 
-local Window = Neverlose_Main:Window({
-    Name = "Universal Utility Script",
-    LoadingTitle = "This was made for educational purposes ;)",
-    LoadingSubtitle = "Like and Subscribe"
-})
+MovementTab:CreateSlider({Name="WalkSpeed",Range={16,100},Increment=0.5,Suffix="Speed",CurrentValue=16,Flag="WalkSpeedSlider",Callback=function(Value) 
+    selectedSpeed=Value 
+end})
 
-local MovementTab = Window:Tab("Movement")
-local VisualsTab = Window:Tab("Visuals")
-
-MovementTab:Slider("WalkSpeed",16,100,16,function(Value)
-    selectedSpeed=Value
-end)
-
-MovementTab:Toggle("Enable WalkSpeed",false,function(Value)
+MovementTab:CreateToggle({Name="Enable WalkSpeed",CurrentValue=false,Flag="WalkSpeedToggle",Callback=function(Value)
     walkspeedEnabled=Value
-    local humanoid=getHumanoid()
     if walkLoop then walkLoop:Disconnect() walkLoop=nil end
-    if Value and humanoid then
+    if Value then
         walkLoop=RunService.Heartbeat:Connect(function()
-            if humanoid and walkspeedEnabled then humanoid.WalkSpeed=selectedSpeed end
+            local humanoid = getHumanoid()
+            if humanoid and walkspeedEnabled then
+                humanoid.WalkSpeed=selectedSpeed
+            end
         end)
-    elseif humanoid then
-        humanoid.WalkSpeed=16
+    else
+        local humanoid=getHumanoid()
+        if humanoid then humanoid.WalkSpeed=16 end
     end
-end)
+end})
 
-MovementTab:Toggle("NoClip",false,function(Value)
-    noclipEnabled=Value
-end)
+MovementTab:CreateToggle({Name="NoClip",CurrentValue=false,Flag="NoClipToggle",Callback=function(Value) 
+    noclipEnabled=Value 
+end})
 
 RunService.Heartbeat:Connect(function()
     if noclipEnabled and player.Character then
@@ -81,32 +84,37 @@ local function removeESP()
 end
 
 local function addESP(plr)
-    local char=plr.Character
-    if char and plr~=player then
-        local box = Instance.new("BoxHandleAdornment")
-        box.Name="ESPBox"
-        box.Adornee = char
+    local char = plr.Character
+    if char and plr ~= player then
+        local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChildWhichIsA("BasePart")
         local hum = char:FindFirstChildWhichIsA("Humanoid")
-        if hum then
-            box.Size = Vector3.new(4, hum.HipHeight*2 + 4, 2)
-        else
-            box.Size = Vector3.new(4,6,2)
-        end
-        box.Color3 = getTeamColor(plr)
-        box.Transparency = 0.45
+        if not hrp or not hum then return end
+
+        local box = Instance.new("BoxHandleAdornment")
+        box.Name = "ESPBox"
+        box.Adornee = hrp
         box.AlwaysOnTop = true
         box.ZIndex = 10
-        box.Parent = char
+        box.Transparency = 0.45
+        box.Color3 = getTeamColor(plr)
+
+        local width = 2
+        local depth = 1
+        local height = hum.HipHeight*2 + 2
+        box.Size = Vector3.new(width, height, depth)
+        box.CFrame = hrp.CFrame
+        box.Parent = hrp
+
         highlights[char] = box
     end
 end
 
-VisualsTab:Toggle("Player ESP",false,function(Value)
+VisualsTab:CreateToggle({Name="Player ESP",CurrentValue=false,Flag="PlayerESP",Callback=function(Value)
     espEnabled=Value
     if not Value then removeESP() else
         for _,plr in pairs(Players:GetPlayers()) do addESP(plr) end
     end
-end)
+end})
 
 local function removeChams()
     for char,parts in pairs(chamsParts) do
@@ -135,14 +143,14 @@ local function addChams(plr)
     end
 end
 
-VisualsTab:Toggle("Chams",false,function(Value)
+VisualsTab:CreateToggle({Name="Chams",CurrentValue=false,Flag="ChamsToggle",Callback=function(Value)
     chamsEnabled=Value
     if not Value then removeChams() else
         for _,plr in pairs(Players:GetPlayers()) do addChams(plr) end
     end
-end)
+end})
 
-VisualsTab:Toggle("FullBright",false,function(Value)
+VisualsTab:CreateToggle({Name="FullBright",CurrentValue=false,Flag="FullBrightToggle",Callback=function(Value)
     fullbrightEnabled=Value
     if fullbrightEnabled then
         Lighting.Brightness=2
@@ -155,12 +163,14 @@ VisualsTab:Toggle("FullBright",false,function(Value)
         Lighting.FogEnd=originalLighting.FogEnd
         Lighting.Ambient=originalLighting.Ambient
     end
-end)
+end})
 
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function()
         if espEnabled then addESP(plr) end
         if chamsEnabled then addChams(plr) end
+        local humanoid = getHumanoid()
+        if walkspeedEnabled and humanoid then humanoid.WalkSpeed = selectedSpeed end
     end)
 end)
 
@@ -173,25 +183,27 @@ for _,plr in pairs(Players:GetPlayers()) do
     plr.CharacterAdded:Connect(function()
         if espEnabled then addESP(plr) end
         if chamsEnabled then addChams(plr) end
+        local humanoid = getHumanoid()
+        if walkspeedEnabled and humanoid then humanoid.WalkSpeed = selectedSpeed end
     end)
 end
 
-local humanoid=getHumanoid()
-if humanoid then humanoid.WalkSpeed=16 end
 walkspeedEnabled=false
 noclipEnabled=false
 espEnabled=false
 chamsEnabled=false
 fullbrightEnabled=false
+selectedSpeed=16
 removeESP()
 removeChams()
 Lighting.Brightness=originalLighting.Brightness
 Lighting.ClockTime=originalLighting.ClockTime
 Lighting.FogEnd=originalLighting.FogEnd
 Lighting.Ambient=originalLighting.Ambient
+local humanoid=getHumanoid()
+if humanoid then humanoid.WalkSpeed=16 end
 
--- Proper cleanup on UI close
-Window:Destroy(function()
+Window:OnClose(function()
     local humanoid=getHumanoid()
     if humanoid then humanoid.WalkSpeed=16 end
     walkspeedEnabled=false
@@ -207,3 +219,5 @@ Window:Destroy(function()
     Lighting.Ambient=originalLighting.Ambient
     if walkLoop then walkLoop:Disconnect() walkLoop=nil end
 end)
+
+Rayfield:LoadConfiguration()
