@@ -26,6 +26,8 @@ local noclipEnabled=false
 local espEnabled=false
 local highlights={}
 local flingEnabled=false
+local chamsEnabled=false
+local chamsParts={}
 local teamColors={Color3.fromRGB(0,255,0),Color3.fromRGB(255,0,0),Color3.fromRGB(0,0,255),Color3.fromRGB(255,255,0),Color3.fromRGB(0,255,255),Color3.fromRGB(255,0,255)}
 local walkLoop=nil
 
@@ -36,29 +38,20 @@ local function getHumanoid()
 end
 
 -- WalkSpeed Slider + Toggle (looping)
-MovementTab:CreateSlider({
-    Name="WalkSpeed",Range={16,100},Increment=0.5,Suffix="Speed",CurrentValue=16,Flag="WalkSpeedSlider",
-    Callback=function(Value) selectedSpeed=Value end
-})
-
-MovementTab:CreateToggle({
-    Name="Enable WalkSpeed",CurrentValue=false,Flag="WalkSpeedToggle",
-    Callback=function(Value)
-        walkspeedEnabled=Value
-        local humanoid=getHumanoid()
-        if Value and humanoid then
-            if walkLoop then walkLoop:Disconnect() end
-            walkLoop=RunService.Heartbeat:Connect(function()
-                if humanoid and walkspeedEnabled then
-                    humanoid.WalkSpeed=selectedSpeed
-                end
-            end)
-        else
-            if walkLoop then walkLoop:Disconnect() walkLoop=nil end
-            if humanoid then humanoid.WalkSpeed=16 end
-        end
+MovementTab:CreateSlider({Name="WalkSpeed",Range={16,100},Increment=0.5,Suffix="Speed",CurrentValue=16,Flag="WalkSpeedSlider",Callback=function(Value) selectedSpeed=Value end})
+MovementTab:CreateToggle({Name="Enable WalkSpeed",CurrentValue=false,Flag="WalkSpeedToggle",Callback=function(Value)
+    walkspeedEnabled=Value
+    local humanoid=getHumanoid()
+    if Value and humanoid then
+        if walkLoop then walkLoop:Disconnect() end
+        walkLoop=RunService.Heartbeat:Connect(function()
+            if humanoid and walkspeedEnabled then humanoid.WalkSpeed=selectedSpeed end
+        end)
+    else
+        if walkLoop then walkLoop:Disconnect() walkLoop=nil end
+        if humanoid then humanoid.WalkSpeed=16 end
     end
-})
+end})
 
 -- JumpPower
 MovementTab:CreateSlider({Name="JumpPower",Range={50,500},Increment=5,Suffix="JumpPower",CurrentValue=50,Flag="JumpPowerSlider",Callback=function(Value) jumpPowerValue=Value end})
@@ -67,19 +60,25 @@ MovementTab:CreateToggle({Name="Jumppower toggle",CurrentValue=false,Flag="JumpP
 -- Fly Mode
 MovementTab:CreateToggle({Name="Fly Mode",CurrentValue=false,Flag="FlyToggle",Callback=function(Value)
     flyEnabled=Value
-    local h=getHumanoid()
+    local char=player.Character
     if flyLoop then flyLoop:Disconnect() flyLoop=nil end
-    if flyEnabled and h then
-        h.PlatformStand=true
-        flyLoop=RunService.Heartbeat:Connect(function()
-            local camCF=workspace.CurrentCamera.CFrame
-            local moveDir=Vector3.new()
-            if UIS:IsKeyDown(Enum.KeyCode.W) then moveDir=moveDir+camCF.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.S) then moveDir=moveDir-camCF.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.A) then moveDir=moveDir-camCF.RightVector end
-            if UIS:IsKeyDown(Enum.KeyCode.D) then moveDir=moveDir+camCF.RightVector end
-            if moveDir.Magnitude>0 then h.Parent:PivotTo(h.Parent:GetPivot()+moveDir.Unit*flySpeed*RunService.RenderStepped:Wait()) end
-        end)
+    if flyEnabled and char then
+        local hrp=char:FindFirstChild("HumanoidRootPart")
+        local h=getHumanoid()
+        if h and hrp then
+            h.PlatformStand=true
+            flyLoop=RunService.Heartbeat:Connect(function(dt)
+                local camCF=workspace.CurrentCamera.CFrame
+                local moveDir=Vector3.new()
+                if UIS:IsKeyDown(Enum.KeyCode.W) then moveDir=moveDir+camCF.LookVector end
+                if UIS:IsKeyDown(Enum.KeyCode.S) then moveDir=moveDir-camCF.LookVector end
+                if UIS:IsKeyDown(Enum.KeyCode.A) then moveDir=moveDir-camCF.RightVector end
+                if UIS:IsKeyDown(Enum.KeyCode.D) then moveDir=moveDir+camCF.RightVector end
+                if UIS:IsKeyDown(Enum.KeyCode.Space) then moveDir=moveDir+Vector3.new(0,1,0) end
+                if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir=moveDir-Vector3.new(0,1,0) end
+                if moveDir.Magnitude>0 then hrp.CFrame=hrp.CFrame+moveDir.Unit*flySpeed*dt end
+            end)
+        end
     elseif h then h.PlatformStand=false end
 end})
 MovementTab:CreateSlider({Name="Fly Speed",Range={10,200},Increment=5,Suffix="Speed",CurrentValue=50,Flag="FlySpeedSlider",Callback=function(Value) flySpeed=Value end})
@@ -130,14 +129,43 @@ end
 
 VisualsTab:CreateToggle({Name="Player ESP",CurrentValue=false,Flag="PlayerESP",Callback=function(Value)
     espEnabled=Value
-    for _,plr in pairs(Players:GetPlayers()) do
-        if Value then addESP(plr) else removeESP(plr) end
-    end
+    for _,plr in pairs(Players:GetPlayers()) do if Value then addESP(plr) else removeESP(plr) end end
 end})
 
-Players.PlayerAdded:Connect(function(plr) plr.CharacterAdded:Connect(function() if espEnabled then addESP(plr) end end) end)
-Players.PlayerRemoving:Connect(function(plr) removeESP(plr) end)
-for _,plr in pairs(Players:GetPlayers()) do plr.CharacterAdded:Connect(function() if espEnabled then addESP(plr) end end) end
+-- Chams
+local function removeChams(plr)
+    local char=plr.Character
+    if char and chamsParts[char] then
+        for _,outline in pairs(chamsParts[char]) do outline:Destroy() end
+        chamsParts[char]=nil
+    end
+end
+
+local function addChams(plr)
+    local char=plr.Character
+    if char and plr~=player then
+        chamsParts[char]={}
+        for _,part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                local box=Instance.new("BoxHandleAdornment")
+                box.Name="ChamsOutline"
+                box.Adornee=part
+                box.Size=part.Size
+                box.Color3=Color3.fromRGB(255,255,255)
+                box.Transparency=0.55
+                box.AlwaysOnTop=true
+                box.ZIndex=10
+                box.Parent=part
+                table.insert(chamsParts[char],box)
+            end
+        end
+    end
+end
+
+VisualsTab:CreateToggle({Name="Chams",CurrentValue=false,Flag="ChamsToggle",Callback=function(Value)
+    chamsEnabled=Value
+    for _,plr in pairs(Players:GetPlayers()) do if Value then addChams(plr) else removeChams(plr) end end
+end})
 
 -- Troll Tab Fling
 TrollTab:CreateToggle({Name="Fling",CurrentValue=false,Flag="FlingToggle",Callback=function(Value)
@@ -148,12 +176,30 @@ TrollTab:CreateToggle({Name="Fling",CurrentValue=false,Flag="FlingToggle",Callba
         if flingEnabled and root then
             coroutine.wrap(function()
                 while flingEnabled and root do
-                    root.CFrame=root.CFrame*CFrame.Angles(0,math.rad(1000),0)
+                    root.CFrame=root.CFrame*CFrame.Angles(0,math.rad(5000),0)
                     task.wait()
                 end
             end)()
         end
     end
 end})
+
+-- Player joins/leaves handling
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function()
+        if espEnabled then addESP(plr) end
+        if chamsEnabled then addChams(plr) end
+    end)
+end)
+Players.PlayerRemoving:Connect(function(plr)
+    removeESP(plr)
+    removeChams(plr)
+end)
+for _,plr in pairs(Players:GetPlayers()) do
+    plr.CharacterAdded:Connect(function()
+        if espEnabled then addESP(plr) end
+        if chamsEnabled then addChams(plr) end
+    end)
+end
 
 Rayfield:LoadConfiguration()
