@@ -1,18 +1,9 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Neverlose_Main = loadstring(game:HttpGet("https://github.com/Mana42138/Neverlose-UI/blob/main/Source.lua"))()
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local player = Players.LocalPlayer
-
-local Window = Rayfield:CreateWindow({
-    Name = "Universal Utility Script",
-    LoadingTitle = "This was made for educational purposes ;)",
-    LoadingSubtitle = "Like and Subscribe",
-    ConfigurationSaving = {Enabled=true,FolderName="UniversalUtilityConfig",FileName="Settings"}
-})
-
-local MovementTab = Window:CreateTab("Movement",4483362458)
-local VisualsTab = Window:CreateTab("Visuals",4483362458)
 
 local walkspeedEnabled=false
 local selectedSpeed=16
@@ -36,8 +27,20 @@ local function getHumanoid()
     end
 end
 
-MovementTab:CreateSlider({Name="WalkSpeed",Range={16,100},Increment=0.5,Suffix="Speed",CurrentValue=16,Flag="WalkSpeedSlider",Callback=function(Value) selectedSpeed=Value end})
-MovementTab:CreateToggle({Name="Enable WalkSpeed",CurrentValue=false,Flag="WalkSpeedToggle",Callback=function(Value)
+local Window = Neverlose_Main:Window({
+    Name = "Universal Utility Script",
+    LoadingTitle = "This was made for educational purposes ;)",
+    LoadingSubtitle = "Like and Subscribe"
+})
+
+local MovementTab = Window:Tab("Movement")
+local VisualsTab = Window:Tab("Visuals")
+
+MovementTab:Slider("WalkSpeed",16,100,16,function(Value)
+    selectedSpeed=Value
+end)
+
+MovementTab:Toggle("Enable WalkSpeed",false,function(Value)
     walkspeedEnabled=Value
     local humanoid=getHumanoid()
     if walkLoop then walkLoop:Disconnect() walkLoop=nil end
@@ -48,9 +51,11 @@ MovementTab:CreateToggle({Name="Enable WalkSpeed",CurrentValue=false,Flag="WalkS
     elseif humanoid then
         humanoid.WalkSpeed=16
     end
-end})
+end)
 
-MovementTab:CreateToggle({Name="NoClip",CurrentValue=false,Flag="NoClipToggle",Callback=function(Value) noclipEnabled=Value end})
+MovementTab:Toggle("NoClip",false,function(Value)
+    noclipEnabled=Value
+end)
 
 RunService.Heartbeat:Connect(function()
     if noclipEnabled and player.Character then
@@ -96,12 +101,12 @@ local function addESP(plr)
     end
 end
 
-VisualsTab:CreateToggle({Name="Player ESP",CurrentValue=false,Flag="PlayerESP",Callback=function(Value)
+VisualsTab:Toggle("Player ESP",false,function(Value)
     espEnabled=Value
     if not Value then removeESP() else
         for _,plr in pairs(Players:GetPlayers()) do addESP(plr) end
     end
-end})
+end)
 
 local function removeChams()
     for char,parts in pairs(chamsParts) do
@@ -130,14 +135,14 @@ local function addChams(plr)
     end
 end
 
-VisualsTab:CreateToggle({Name="Chams",CurrentValue=false,Flag="ChamsToggle",Callback=function(Value)
+VisualsTab:Toggle("Chams",false,function(Value)
     chamsEnabled=Value
     if not Value then removeChams() else
         for _,plr in pairs(Players:GetPlayers()) do addChams(plr) end
     end
-end})
+end)
 
-VisualsTab:CreateToggle({Name="FullBright",CurrentValue=false,Flag="FullBrightToggle",Callback=function(Value)
+VisualsTab:Toggle("FullBright",false,function(Value)
     fullbrightEnabled=Value
     if fullbrightEnabled then
         Lighting.Brightness=2
@@ -150,7 +155,7 @@ VisualsTab:CreateToggle({Name="FullBright",CurrentValue=false,Flag="FullBrightTo
         Lighting.FogEnd=originalLighting.FogEnd
         Lighting.Ambient=originalLighting.Ambient
     end
-end})
+end)
 
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function()
@@ -185,7 +190,8 @@ Lighting.ClockTime=originalLighting.ClockTime
 Lighting.FogEnd=originalLighting.FogEnd
 Lighting.Ambient=originalLighting.Ambient
 
-Window:OnClose(function()
+-- Proper cleanup on UI close
+Window:Destroy(function()
     local humanoid=getHumanoid()
     if humanoid then humanoid.WalkSpeed=16 end
     walkspeedEnabled=false
@@ -201,5 +207,3 @@ Window:OnClose(function()
     Lighting.Ambient=originalLighting.Ambient
     if walkLoop then walkLoop:Disconnect() walkLoop=nil end
 end)
-
-Rayfield:LoadConfiguration()
