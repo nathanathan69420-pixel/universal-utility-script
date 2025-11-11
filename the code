@@ -25,6 +25,12 @@ local FlySpeed = 2
 local BodyVel
 local BodyGyro
 
+local ChamsColor = Color3.fromRGB(255,0,0)
+local ChamsEnabled = false
+local FullbrightEnabled = false
+local originalLighting = {}
+
+-- Walkspeed
 local function StopLoop()
     if LoopConnection then
         LoopConnection:Disconnect()
@@ -69,6 +75,7 @@ local WalkspeedToggle = MovementTab:CreateToggle({
     end
 })
 
+-- Noclip
 local function StopNoclip()
     if NoclipConnection then
         NoclipConnection:Disconnect()
@@ -104,6 +111,7 @@ local NoclipToggle = MovementTab:CreateToggle({
     end
 })
 
+-- Fly
 local function StopFly()
     if FlyConnection then
         FlyConnection:Disconnect()
@@ -186,6 +194,7 @@ local FlySpeedSlider = MovementTab:CreateSlider({
     end
 })
 
+-- Visuals
 local function ApplyChamsToPlayer(player, enabled)
     if player == game.Players.LocalPlayer then return end
     local char = player.Character
@@ -276,15 +285,41 @@ local FullbrightToggle = VisualsTab:CreateToggle({
     end
 })
 
+-- Reset everything to defaults when the script loads
 task.delay(0.1, function()
+    -- Reset toggles
     WalkspeedToggle:Set(false)
     NoclipToggle:Set(false)
     FlyToggle:Set(false)
+    ChamsToggle:Set(false)
+    FullbrightToggle:Set(false)
+
+    -- Reset sliders
     WalkspeedSlider:Set(16)
     FlySpeedSlider:Set(2)
+
+    -- Reset variables
     CurrentWalkspeed = 16
     FlySpeed = 2
+    WalkspeedEnabled = false
+    NoclipEnabled = false
+    FlyEnabled = false
+    ChamsEnabled = false
+    FullbrightEnabled = false
+
+    -- Stop any running loops
     StopLoop()
     StopNoclip()
     StopFly()
+    ApplyChams(false)
+
+    -- Restore lighting if Fullbright was active
+    local lighting = game:GetService("Lighting")
+    if originalLighting.Brightness then
+        lighting.Brightness = originalLighting.Brightness
+        lighting.ClockTime = originalLighting.ClockTime
+        lighting.FogEnd = originalLighting.FogEnd
+        lighting.GlobalShadows = originalLighting.GlobalShadows
+        lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+    end
 end)
