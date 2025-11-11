@@ -3,324 +3,332 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
     Name = "Universal Utility",
     LoadingTitle = "Educational Purposes Only ;)",
-    LoadingSubtitle = "Like And Subscribe",
+    LoadingSubtitle = "Like and subscribe",
     ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "UniversalUtilityConfigs",
-        FileName = "Settings"
-    }
+        Enabled = false,
+        FolderName = "MyGame",
+        FileName = "Configuration"
+    },
+    KeySystem = false,
 })
 
 local MovementTab = Window:CreateTab("Movement", 4483362458)
-local VisualsTab = Window:CreateTab("Visuals", 4483362458)
 
-local WalkspeedEnabled = false
-local CurrentWalkspeed = 16
-local LoopConnection
-local NoclipEnabled = false
-local NoclipConnection
-local FlyEnabled = false
-local FlyConnection
-local FlySpeed = 2
-local BodyVel
-local BodyGyro
+local player = game.Players.LocalPlayer
+local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 
-local ChamsColor = Color3.fromRGB(255,0,0)
-local ChamsEnabled = false
-local FullbrightEnabled = false
-local originalLighting = {}
+local isEnabled = false
+local currentSpeed = 16
+local speedConnection = nil
 
--- Walkspeed
-local function StopLoop()
-    if LoopConnection then
-        LoopConnection:Disconnect()
-        LoopConnection = nil
+local noclipEnabled = false
+local noclipConnection = nil
+
+local flyEnabled = false
+local flyConnection = nil
+local flyBodyVelocity = nil
+local flyBodyGyro = nil
+local flySpeed = 50
+
+local fullbrightEnabled = false
+local fullbrightConnection = nil
+local espEnabled = false
+local espConnection = nil
+local espColor = Color3.fromRGB(255, 255, 255)
+
+local function updateWalkspeed()
+    if humanoid then
+        humanoid.WalkSpeed = currentSpeed
     end
 end
 
-local function StartLoop()
-    StopLoop()
-    LoopConnection = game:GetService("RunService").Heartbeat:Connect(function()
-        local player = game.Players.LocalPlayer
-        local char = player and player.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if WalkspeedEnabled and hum then
-            hum.WalkSpeed = CurrentWalkspeed
+local function updateNoclip()
+    if player.Character then
+        for _, part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
         end
-    end)
+    end
 end
+
+local function updateFly()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local rootPart = player.Character.HumanoidRootPart
+        
+        if not flyBodyVelocity then
+            flyBodyVelocity = Instance.new("BodyVelocity")
+            flyBodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            flyBodyVelocity.Parent = rootPart
+        end
+        
+        if not flyBodyGyro then
+            flyBodyGyro = Instance.new("BodyGyro")
+            flyBodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            flyBodyGyro.P = 10000
+            flyBodyGyro.Parent = rootPart
+        end
+        
+        local camera = workspace.CurrentCamera
+        flyBodyGyro.CFrame = camera.CFrame
+        
+        local userInputService = game:GetService("UserInputService")
+        local moveDirection = Vector3.new(0, 0, 0)
+        
+        if userInputService:IsKeyDown(Enum.KeyCode.W) then
+            moveDirection = moveDirection + camera.CFrame.LookVector
+        end
+        if userInputService:IsKeyDown(Enum.KeyCode.S) then
+            moveDirection = moveDirection - camera.CFrame.LookVector
+        end
+        
+        if userInputService:IsKeyDown(Enum.KeyCode.A) then
+            moveDirection = moveDirection - camera.CFrame.RightVector
+        end
+        if userInputService:IsKeyDown(Enum.KeyCode.D) then
+            moveDirection = moveDirection + camera.CFrame.RightVector
+        end
+        
+        if userInputService:IsKeyDown(Enum.KeyCode.Space) then
+            moveDirection = moveDirection + Vector3.new(0, 1, 0)
+        end
+        if userInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+            moveDirection = moveDirection - Vector3.new(0, 1, 0)
+        end
+        
+        if moveDirection.Magnitude > 0 then
+            flyBodyVelocity.Velocity = moveDirection.Unit * flySpeed
+        else
+            flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        end
+    end
+end
+
+local function updateFullbright()
+    local lighting = game:GetService("Lighting")
+    lighting.GlobalShadows = false
+    lighting.Brightness = 2
+    lighting.Ambient = Color3.fromRGB(255, 255, 255)
+    lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    lighting.FogEnd = math.huge
+    lighting.FogStart = 0
+    if lighting:FindFirstChild("Atmosphere") then
+        lighting.Atmosphere:Destroy()
+    end
+end
+
+local function resetFullbright()
+    local lighting = game:GetService("Lighting")
+    lighting.GlobalShadows = true
+    lighting.Brightness = 1
+    lighting.Ambient = Color3.fromRGB(0, 0, 0)
+    lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
+    lighting.FogEnd = 100000
+    lighting.FogStart = 0
+end
+
+local function updateESP()
+    for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            local highlight = otherPlayer.Character:FindFirstChild("ESPHighlight")
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Name = "ESPHighlight"
+                highlight.FillColor = espColor
+                highlight.OutlineColor = espColor
+                highlight.OutlineTransparency = 0
+                highlight.Parent = otherPlayer.Character
+            end
+            highlight.Enabled = true
+        end
+    end
+end
+
+local function removeESP()
+    for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+        if otherPlayer.Character then
+            local highlight = otherPlayer.Character:FindFirstChild("ESPHighlight")
+            if highlight then
+                highlight:Destroy()
+            end
+        end
+    end
+end
+
+local function onCharacterAdded(character)
+    humanoid = character:WaitForChild("Humanoid")
+    if isEnabled then
+        updateWalkspeed()
+    end
+    if noclipEnabled then
+        updateNoclip()
+    end
+    if flyEnabled then
+        flyBodyVelocity = nil
+        flyBodyGyro = nil
+    end
+    if espEnabled then
+        updateESP()
+    end
+end
+player.CharacterAdded:Connect(onCharacterAdded)
 
 local WalkspeedSlider = MovementTab:CreateSlider({
-    Name = "Walkspeed",
-    Range = {16, 100},
+    Name = "Walkspeed Value",
+    Range = {16, 200},
     Increment = 1,
+    Suffix = " Speed",
     CurrentValue = 16,
-    Flag = "WalkspeedValue",
+    Flag = "WalkspeedSlider",
     Callback = function(Value)
-        CurrentWalkspeed = Value
-    end
+        currentSpeed = Value
+        if isEnabled then
+            updateWalkspeed()
+        end
+    end,
 })
 
 local WalkspeedToggle = MovementTab:CreateToggle({
     Name = "Enable Walkspeed",
     CurrentValue = false,
-    Flag = "WalkspeedEnabled",
+    Flag = "WalkspeedToggle",
     Callback = function(Value)
-        WalkspeedEnabled = Value
-        if Value then
-            StartLoop()
+        isEnabled = Value
+        if isEnabled then
+            speedConnection = game:GetService("RunService").Heartbeat:Connect(updateWalkspeed)
+            updateWalkspeed()
         else
-            StopLoop()
-        end
-    end
-})
-
--- Noclip
-local function StopNoclip()
-    if NoclipConnection then
-        NoclipConnection:Disconnect()
-        NoclipConnection = nil
-    end
-end
-
-local function StartNoclip()
-    StopNoclip()
-    NoclipConnection = game:GetService("RunService").Stepped:Connect(function()
-        local char = game.Players.LocalPlayer.Character
-        if NoclipEnabled and char then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
+            if speedConnection then
+                speedConnection:Disconnect()
+                speedConnection = nil
+            end
+            if humanoid then
+                humanoid.WalkSpeed = 16
             end
         end
-    end)
-end
+    end,
+})
 
 local NoclipToggle = MovementTab:CreateToggle({
     Name = "Noclip",
     CurrentValue = false,
-    Flag = "NoclipEnabled",
+    Flag = "NoclipToggle",
     Callback = function(Value)
-        NoclipEnabled = Value
-        if Value then
-            StartNoclip()
+        noclipEnabled = Value
+        if noclipEnabled then
+            noclipConnection = game:GetService("RunService").Heartbeat:Connect(updateNoclip)
+            updateNoclip()
         else
-            StopNoclip()
-        end
-    end
-})
-
--- Fly
-local function StopFly()
-    if FlyConnection then
-        FlyConnection:Disconnect()
-        FlyConnection = nil
-    end
-    local char = game.Players.LocalPlayer.Character
-    if char then
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            if BodyVel then BodyVel:Destroy() BodyVel = nil end
-            if BodyGyro then BodyGyro:Destroy() BodyGyro = nil end
-        end
-    end
-end
-
-local function StartFly()
-    StopFly()
-    local player = game.Players.LocalPlayer
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    BodyVel = Instance.new("BodyVelocity")
-    BodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-    BodyVel.Velocity = Vector3.zero
-    BodyVel.Parent = hrp
-
-    BodyGyro = Instance.new("BodyGyro")
-    BodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-    BodyGyro.CFrame = hrp.CFrame
-    BodyGyro.P = 1e4
-    BodyGyro.Parent = hrp
-
-    FlyConnection = game:GetService("RunService").Heartbeat:Connect(function()
-        if FlyEnabled and hrp then
-            local cam = workspace.CurrentCamera
-            local dir = Vector3.zero
-            local uis = game:GetService("UserInputService")
-
-            if uis:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.CFrame.LookVector end
-            if uis:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.CFrame.LookVector end
-            if uis:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.CFrame.RightVector end
-            if uis:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.CFrame.RightVector end
-            if uis:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
-            if uis:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir + Vector3.new(0,-1,0) end
-
-            if dir.Magnitude > 0 then
-                BodyVel.Velocity = dir.Unit * FlySpeed * 10
-            else
-                BodyVel.Velocity = Vector3.zero
+            if noclipConnection then
+                noclipConnection:Disconnect()
+                noclipConnection = nil
             end
-
-            BodyGyro.CFrame = cam.CFrame
+            if player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        part.CanCollide = true
+                    end
+                end
+            end
         end
-    end)
-end
-
-local FlyToggle = MovementTab:CreateToggle({
-    Name = "Fly",
-    CurrentValue = false,
-    Flag = "FlyEnabled",
-    Callback = function(Value)
-        FlyEnabled = Value
-        if Value then
-            StartFly()
-        else
-            StopFly()
-        end
-    end
+    end,
 })
 
 local FlySpeedSlider = MovementTab:CreateSlider({
     Name = "Fly Speed",
-    Range = {1, 10},
+    Range = {16, 200},
     Increment = 1,
-    CurrentValue = 2,
-    Flag = "FlySpeedValue",
+    Suffix = " Speed",
+    CurrentValue = 50,
+    Flag = "FlySpeedSlider",
     Callback = function(Value)
-        FlySpeed = Value
-    end
+        flySpeed = Value
+    end,
 })
 
--- Visuals
-local function ApplyChamsToPlayer(player, enabled)
-    if player == game.Players.LocalPlayer then return end
-    local char = player.Character
-    if not char then return end
-    for _, part in pairs(char:GetChildren()) do
-        if part:IsA("BasePart") then
-            if enabled then
-                local highlight = part:FindFirstChild("ChamsHighlight") or Instance.new("Highlight")
-                highlight.Name = "ChamsHighlight"
-                highlight.FillTransparency = 0.55
-                highlight.OutlineTransparency = 0
-                highlight.FillColor = ChamsColor
-                highlight.OutlineColor = ChamsColor
-                highlight.Parent = part
-            else
-                local existing = part:FindFirstChild("ChamsHighlight")
-                if existing then existing:Destroy() end
+local FlyToggle = MovementTab:CreateToggle({
+    Name = "Fly",
+    CurrentValue = false,
+    Flag = "FlyToggle",
+    Callback = function(Value)
+        flyEnabled = Value
+        if flyEnabled then
+            flyConnection = game:GetService("RunService").Heartbeat:Connect(updateFly)
+            updateFly()
+        else
+            if flyConnection then
+                flyConnection:Disconnect()
+                flyConnection = nil
+            end
+            if flyBodyVelocity then
+                flyBodyVelocity:Destroy()
+                flyBodyVelocity = nil
+            end
+            if flyBodyGyro then
+                flyBodyGyro:Destroy()
+                flyBodyGyro = nil
             end
         end
-    end
-end
-
-local function ApplyChams(enabled)
-    ChamsEnabled = enabled
-    for _, player in pairs(game.Players:GetPlayers()) do
-        ApplyChamsToPlayer(player, enabled)
-    end
-end
-
-local ChamsToggle = VisualsTab:CreateToggle({
-    Name = "Chams",
-    CurrentValue = false,
-    Flag = "ChamsEnabled",
-    Callback = function(Value)
-        ApplyChams(Value)
-        if Value then
-            game.Players.PlayerAdded:Connect(function(player)
-                player.CharacterAdded:Connect(function()
-                    if ChamsEnabled then
-                        ApplyChamsToPlayer(player, true)
-                    end
-                end)
-            end)
-        end
-    end
+    end,
 })
 
-VisualsTab:CreateColorPicker({
-    Name = "Chams Color",
-    Color = Color3.fromRGB(255, 0, 0),
-    Flag = "ChamsColor",
-    Callback = function(Value)
-        ChamsColor = Value
-        if ChamsEnabled then
-            ApplyChams(true)
-        end
-    end
-})
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
 
 local FullbrightToggle = VisualsTab:CreateToggle({
     Name = "Fullbright",
     CurrentValue = false,
-    Flag = "FullbrightEnabled",
+    Flag = "FullbrightToggle",
     Callback = function(Value)
-        local lighting = game:GetService("Lighting")
-        if Value then
-            FullbrightEnabled = true
-            originalLighting.Brightness = lighting.Brightness
-            originalLighting.ClockTime = lighting.ClockTime
-            originalLighting.FogEnd = lighting.FogEnd
-            originalLighting.GlobalShadows = lighting.GlobalShadows
-            originalLighting.OutdoorAmbient = lighting.OutdoorAmbient
-            lighting.Brightness = 2
-            lighting.ClockTime = 12
-            lighting.FogEnd = 100000
-            lighting.FogStart = 0
-            lighting.GlobalShadows = false
-            lighting.OutdoorAmbient = Color3.new(1,1,1)
+        fullbrightEnabled = Value
+        if fullbrightEnabled then
+            fullbrightConnection = game:GetService("RunService").Heartbeat:Connect(updateFullbright)
+            updateFullbright()
         else
-            FullbrightEnabled = false
-            if originalLighting.Brightness then
-                lighting.Brightness = originalLighting.Brightness
-                lighting.ClockTime = originalLighting.ClockTime
-                lighting.FogEnd = originalLighting.FogEnd
-                lighting.GlobalShadows = originalLighting.GlobalShadows
-                lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+            if fullbrightConnection then
+                fullbrightConnection:Disconnect()
+                fullbrightConnection = nil
             end
+            resetFullbright()
         end
-    end
+    end,
 })
 
--- Reset everything to defaults when the script loads
-task.delay(0.1, function()
-    -- Reset toggles
-    WalkspeedToggle:Set(false)
-    NoclipToggle:Set(false)
-    FlyToggle:Set(false)
-    ChamsToggle:Set(false)
-    FullbrightToggle:Set(false)
+local ESPToggle = VisualsTab:CreateToggle({
+    Name = "Player ESP",
+    CurrentValue = false,
+    Flag = "ESPToggle",
+    Callback = function(Value)
+        espEnabled = Value
+        if espEnabled then
+            espConnection = game:GetService("RunService").Heartbeat:Connect(updateESP)
+            updateESP()
+        else
+            if espConnection then
+                espConnection:Disconnect()
+                espConnection = nil
+            end
+            removeESP()
+        end
+    end,
+})
 
-    -- Reset sliders
-    WalkspeedSlider:Set(16)
-    FlySpeedSlider:Set(2)
-
-    -- Reset variables
-    CurrentWalkspeed = 16
-    FlySpeed = 2
-    WalkspeedEnabled = false
-    NoclipEnabled = false
-    FlyEnabled = false
-    ChamsEnabled = false
-    FullbrightEnabled = false
-
-    -- Stop any running loops
-    StopLoop()
-    StopNoclip()
-    StopFly()
-    ApplyChams(false)
-
-    -- Restore lighting if Fullbright was active
-    local lighting = game:GetService("Lighting")
-    if originalLighting.Brightness then
-        lighting.Brightness = originalLighting.Brightness
-        lighting.ClockTime = originalLighting.ClockTime
-        lighting.FogEnd = originalLighting.FogEnd
-        lighting.GlobalShadows = originalLighting.GlobalShadows
-        lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
-    end
-end)
+local ESPColorPicker = VisualsTab:CreateColorPicker({
+    Name = "ESP Color",
+    Color = espColor,
+    Flag = "ESPColor",
+    Callback = function(Value)
+        espColor = Value
+        if espEnabled then
+            for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+                if otherPlayer ~= player and otherPlayer.Character then
+                    local highlight = otherPlayer.Character:FindFirstChild("ESPHighlight")
+                    if highlight then
+                        highlight.FillColor = espColor
+                        highlight.OutlineColor = espColor
+                    end
+                end
+            end
+        end
+    end,
+})
