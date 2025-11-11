@@ -270,6 +270,7 @@ local FullbrightToggle = VisualsTab:CreateToggle({
             lighting.Brightness = 2
             lighting.ClockTime = 12
             lighting.FogEnd = 100000
+            lighting.FogStart = 0
             lighting.GlobalShadows = false
             lighting.OutdoorAmbient = Color3.new(1,1,1)
         else
