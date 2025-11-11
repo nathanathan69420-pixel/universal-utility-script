@@ -186,6 +186,96 @@ local FlySpeedSlider = MovementTab:CreateSlider({
     end
 })
 
+local function ApplyChamsToPlayer(player, enabled)
+    if player == game.Players.LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    for _, part in pairs(char:GetChildren()) do
+        if part:IsA("BasePart") then
+            if enabled then
+                local highlight = part:FindFirstChild("ChamsHighlight") or Instance.new("Highlight")
+                highlight.Name = "ChamsHighlight"
+                highlight.FillTransparency = 0.55
+                highlight.OutlineTransparency = 0
+                highlight.FillColor = ChamsColor
+                highlight.OutlineColor = ChamsColor
+                highlight.Parent = part
+            else
+                local existing = part:FindFirstChild("ChamsHighlight")
+                if existing then existing:Destroy() end
+            end
+        end
+    end
+end
+
+local function ApplyChams(enabled)
+    ChamsEnabled = enabled
+    for _, player in pairs(game.Players:GetPlayers()) do
+        ApplyChamsToPlayer(player, enabled)
+    end
+end
+
+local ChamsToggle = VisualsTab:CreateToggle({
+    Name = "Chams",
+    CurrentValue = false,
+    Flag = "ChamsEnabled",
+    Callback = function(Value)
+        ApplyChams(Value)
+        if Value then
+            game.Players.PlayerAdded:Connect(function(player)
+                player.CharacterAdded:Connect(function()
+                    if ChamsEnabled then
+                        ApplyChamsToPlayer(player, true)
+                    end
+                end)
+            end)
+        end
+    end
+})
+
+VisualsTab:CreateColorPicker({
+    Name = "Chams Color",
+    Color = Color3.fromRGB(255, 0, 0),
+    Flag = "ChamsColor",
+    Callback = function(Value)
+        ChamsColor = Value
+        if ChamsEnabled then
+            ApplyChams(true)
+        end
+    end
+})
+
+local FullbrightToggle = VisualsTab:CreateToggle({
+    Name = "Fullbright",
+    CurrentValue = false,
+    Flag = "FullbrightEnabled",
+    Callback = function(Value)
+        local lighting = game:GetService("Lighting")
+        if Value then
+            FullbrightEnabled = true
+            originalLighting.Brightness = lighting.Brightness
+            originalLighting.ClockTime = lighting.ClockTime
+            originalLighting.FogEnd = lighting.FogEnd
+            originalLighting.GlobalShadows = lighting.GlobalShadows
+            originalLighting.OutdoorAmbient = lighting.OutdoorAmbient
+            lighting.Brightness = 2
+            lighting.ClockTime = 12
+            lighting.FogEnd = 100000
+            lighting.GlobalShadows = false
+            lighting.OutdoorAmbient = Color3.new(1,1,1)
+        else
+            FullbrightEnabled = false
+            if originalLighting.Brightness then
+                lighting.Brightness = originalLighting.Brightness
+                lighting.ClockTime = originalLighting.ClockTime
+                lighting.FogEnd = originalLighting.FogEnd
+                lighting.GlobalShadows = originalLighting.GlobalShadows
+                lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+            end
+        end
+    end
+})
+
 task.delay(0.1, function()
     WalkspeedToggle:Set(false)
     NoclipToggle:Set(false)
