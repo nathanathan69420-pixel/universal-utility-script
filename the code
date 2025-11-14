@@ -36,6 +36,16 @@ local espEnabled = false
 local espConnection = nil
 local espColor = Color3.fromRGB(255, 255, 255)
 
+local lighting = game:GetService("Lighting")
+local originalLighting = {
+    GlobalShadows = lighting.GlobalShadows,
+    Brightness = lighting.Brightness,
+    Ambient = lighting.Ambient,
+    OutdoorAmbient = lighting.OutdoorAmbient,
+    FogEnd = lighting.FogEnd,
+    FogStart = lighting.FogStart
+}
+
 local function updateWalkspeed()
     if humanoid then
         humanoid.WalkSpeed = currentSpeed
@@ -106,7 +116,6 @@ local function updateFly()
 end
 
 local function updateFullbright()
-    local lighting = game:GetService("Lighting")
     lighting.GlobalShadows = false
     lighting.Brightness = 1
     lighting.Ambient = Color3.fromRGB(64, 64, 64)
@@ -119,22 +128,19 @@ local function updateFullbright()
 end
 
 local function resetFullbright()
-    local lighting = game:GetService("Lighting")
-    lighting.GlobalShadows = true
-    lighting.Brightness = 1
-    lighting.Ambient = Color3.fromRGB(0, 0, 0)
-    lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
-    lighting.FogEnd = 100000
-    lighting.FogStart = 0
+    lighting.GlobalShadows = originalLighting.GlobalShadows
+    lighting.Brightness = originalLighting.Brightness
+    lighting.Ambient = originalLighting.Ambient
+    lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+    lighting.FogEnd = originalLighting.FogEnd
+    lighting.FogStart = originalLighting.FogStart
 end
 
 local function isCharacterInvisible(character)
     if not character then return false end
-    
     local parts = character:GetDescendants()
     local totalParts = 0
     local transparentParts = 0
-    
     for _, part in pairs(parts) do
         if part:IsA("BasePart") then
             totalParts = totalParts + 1
@@ -143,7 +149,6 @@ local function isCharacterInvisible(character)
             end
         end
     end
-    
     return totalParts > 0 and transparentParts >= totalParts * 0.5
 end
 
@@ -152,7 +157,6 @@ local function updateESP()
         if otherPlayer ~= player and otherPlayer.Character then
             local character = otherPlayer.Character
             local highlight = character:FindFirstChild("ESPHighlight")
-            
             if not highlight then
                 local success, newHighlight = pcall(Instance.new, "Highlight")
                 if success then
@@ -163,14 +167,12 @@ local function updateESP()
                     continue
                 end
             end
-            
             if highlight then
                 pcall(function()
                     local invisible = isCharacterInvisible(character)
                     highlight.FillColor = espColor
                     highlight.OutlineColor = espColor
                     highlight.OutlineTransparency = 0
-                    
                     if invisible then
                         highlight.FillTransparency = 0.5
                         highlight.OutlineThickness = 4
@@ -178,7 +180,6 @@ local function updateESP()
                         highlight.FillTransparency = 0.75
                         highlight.OutlineThickness = 3
                     end
-                    
                     highlight.Enabled = true
                 end)
             end
@@ -269,13 +270,13 @@ local NoclipToggle = MovementTab:CreateToggle({
                 noclipConnection = nil
             end
             if player.Character then
-                for _, part in pairs(player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        if part.Name == "HumanoidRootPart" or part.Name == "Torso" or part.Name == "UpperTorso" or part.Name == "LowerTorso" then
+                pcall(function()
+                    for _, part in pairs(player.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
                             part.CanCollide = true
                         end
                     end
-                end
+                end)
             end
         end
     end,
