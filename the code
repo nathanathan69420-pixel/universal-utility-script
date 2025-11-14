@@ -144,26 +144,40 @@ end
 local function updateESP()
     for _, otherPlayer in pairs(game.Players:GetPlayers()) do
         if otherPlayer ~= player and otherPlayer.Character then
-            local highlight = otherPlayer.Character:FindFirstChild("ESPHighlight")
+            local character = otherPlayer.Character
+            local highlight = character:FindFirstChild("ESPHighlight")
             if not highlight then
-                highlight = Instance.new("Highlight")
-                highlight.Name = "ESPHighlight"
-                highlight.Parent = otherPlayer.Character
+                local success, result = pcall(function()
+                    return Instance.new("Highlight")
+                end)
+                if success then
+                    highlight = result
+                    highlight.Name = "ESPHighlight"
+                    highlight.Parent = character
+                else
+                    continue
+                end
             end
-            if isCharacterInvisible(otherPlayer.Character) then
-                highlight.FillColor = espColor
-                highlight.OutlineColor = espColor
-                highlight.OutlineTransparency = 0
-                highlight.FillTransparency = 0.5
-                highlight.OutlineThickness = 4
-            else
-                highlight.FillColor = espColor
-                highlight.OutlineColor = espColor
-                highlight.OutlineTransparency = 0
-                highlight.FillTransparency = 0.75
-                highlight.OutlineThickness = 3
+            local visible = false
+            local success, result = pcall(function()
+                visible = isCharacterInvisible(character)
+            end)
+            if success then
+                if visible then
+                    highlight.FillColor = espColor
+                    highlight.OutlineColor = espColor
+                    highlight.OutlineTransparency = 0
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineThickness = 4
+                else
+                    highlight.FillColor = espColor
+                    highlight.OutlineColor = espColor
+                    highlight.OutlineTransparency = 0
+                    highlight.FillTransparency = 0.75
+                    highlight.OutlineThickness = 3
+                end
+                highlight.Enabled = espEnabled
             end
-            highlight.Enabled = true
         end
     end
 end
