@@ -130,11 +130,11 @@ end
 
 local function isCharacterInvisible(character)
     if not character then return false end
-    local keyParts = {"Head", "Torso", "UpperTorso", "LowerTorso", "LeftArm", "RightArm", "LeftLeg", "RightLeg", "LeftHand", "RightHand", "LeftFoot", "RightFoot"}
+    local keyParts = {"Head", "Torso", "UpperTorso", "LowerTorso", "HumanoidRootPart", "LeftArm", "RightArm", "LeftLeg", "RightLeg"}
     local invisibleCount = 0
     for _, partName in pairs(keyParts) do
         local part = character:FindFirstChild(partName)
-        if part and part:IsA("BasePart") and part.Transparency >= 0.9 then
+        if part and part:IsA("BasePart") and part.Transparency >= 0.8 then
             invisibleCount = invisibleCount + 1
         end
     end
@@ -145,39 +145,35 @@ local function updateESP()
     for _, otherPlayer in pairs(game.Players:GetPlayers()) do
         if otherPlayer ~= player and otherPlayer.Character then
             local character = otherPlayer.Character
-            local highlight = character:FindFirstChild("ESPHighlight")
-            if not highlight then
-                local success, result = pcall(function()
-                    return Instance.new("Highlight")
-                end)
-                if success then
-                    highlight = result
-                    highlight.Name = "ESPHighlight"
-                    highlight.Parent = character
-                else
-                    continue
+            local success, rootPart = pcall(function() return character:FindFirstChild("HumanoidRootPart") end)
+            if not success or not rootPart then continue end
+            
+            local success2, highlight = pcall(function()
+                local h = character:FindFirstChild("ESPHighlight")
+                if not h then
+                    h = Instance.new("Highlight")
+                    h.Name = "ESPHighlight"
+                    h.Parent = character
                 end
-            end
-            local visible = false
-            local success, result = pcall(function()
-                visible = isCharacterInvisible(character)
+                return h
             end)
-            if success then
-                if visible then
-                    highlight.FillColor = espColor
-                    highlight.OutlineColor = espColor
-                    highlight.OutlineTransparency = 0
+            
+            if not success2 or not highlight then continue end
+            
+            pcall(function()
+                local invisible = isCharacterInvisible(character)
+                highlight.FillColor = espColor
+                highlight.OutlineColor = espColor
+                highlight.OutlineTransparency = 0
+                if invisible then
                     highlight.FillTransparency = 0.5
                     highlight.OutlineThickness = 4
                 else
-                    highlight.FillColor = espColor
-                    highlight.OutlineColor = espColor
-                    highlight.OutlineTransparency = 0
                     highlight.FillTransparency = 0.75
                     highlight.OutlineThickness = 3
                 end
-                highlight.Enabled = espEnabled
-            end
+                highlight.Enabled = true
+            end)
         end
     end
 end
@@ -185,10 +181,12 @@ end
 local function removeESP()
     for _, otherPlayer in pairs(game.Players:GetPlayers()) do
         if otherPlayer.Character then
-            local highlight = otherPlayer.Character:FindFirstChild("ESPHighlight")
-            if highlight then
-                highlight:Destroy()
-            end
+            pcall(function()
+                local highlight = otherPlayer.Character:FindFirstChild("ESPHighlight")
+                if highlight then
+                    highlight:Destroy()
+                end
+            end)
         end
     end
 end
@@ -206,6 +204,7 @@ local function onCharacterAdded(character)
         flyBodyGyro = nil
     end
     if espEnabled then
+        task.wait(0.5)
         updateESP()
     end
 end
