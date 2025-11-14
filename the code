@@ -128,6 +128,19 @@ local function resetFullbright()
     lighting.FogStart = 0
 end
 
+local function isCharacterInvisible(character)
+    if not character then return false end
+    local keyParts = {"Head", "Torso", "UpperTorso", "LowerTorso", "LeftArm", "RightArm", "LeftLeg", "RightLeg", "LeftHand", "RightHand", "LeftFoot", "RightFoot"}
+    local invisibleCount = 0
+    for _, partName in pairs(keyParts) do
+        local part = character:FindFirstChild(partName)
+        if part and part:IsA("BasePart") and part.Transparency >= 0.9 then
+            invisibleCount = invisibleCount + 1
+        end
+    end
+    return invisibleCount >= 2
+end
+
 local function updateESP()
     for _, otherPlayer in pairs(game.Players:GetPlayers()) do
         if otherPlayer ~= player and otherPlayer.Character then
@@ -135,10 +148,20 @@ local function updateESP()
             if not highlight then
                 highlight = Instance.new("Highlight")
                 highlight.Name = "ESPHighlight"
+                highlight.Parent = otherPlayer.Character
+            end
+            if isCharacterInvisible(otherPlayer.Character) then
                 highlight.FillColor = espColor
                 highlight.OutlineColor = espColor
                 highlight.OutlineTransparency = 0
-                highlight.Parent = otherPlayer.Character
+                highlight.FillTransparency = 0.5
+                highlight.OutlineThickness = 4
+            else
+                highlight.FillColor = espColor
+                highlight.OutlineColor = espColor
+                highlight.OutlineTransparency = 0
+                highlight.FillTransparency = 0.75
+                highlight.OutlineThickness = 3
             end
             highlight.Enabled = true
         end
@@ -320,15 +343,7 @@ local ESPColorPicker = VisualsTab:CreateColorPicker({
     Callback = function(Value)
         espColor = Value
         if espEnabled then
-            for _, otherPlayer in pairs(game.Players:GetPlayers()) do
-                if otherPlayer ~= player and otherPlayer.Character then
-                    local highlight = otherPlayer.Character:FindFirstChild("ESPHighlight")
-                    if highlight then
-                        highlight.FillColor = espColor
-                        highlight.OutlineColor = espColor
-                    end
-                end
-            end
+            updateESP()
         end
     end,
 })
