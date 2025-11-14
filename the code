@@ -108,9 +108,9 @@ end
 local function updateFullbright()
     local lighting = game:GetService("Lighting")
     lighting.GlobalShadows = false
-    lighting.Brightness = 2
-    lighting.Ambient = Color3.fromRGB(255, 255, 255)
-    lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    lighting.Brightness = 1
+    lighting.Ambient = Color3.fromRGB(64, 64, 64)
+    lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
     lighting.FogEnd = math.huge
     lighting.FogStart = 0
     if lighting:FindFirstChild("Atmosphere") then
@@ -130,50 +130,58 @@ end
 
 local function isCharacterInvisible(character)
     if not character then return false end
-    local keyParts = {"Head", "Torso", "UpperTorso", "LowerTorso", "HumanoidRootPart", "LeftArm", "RightArm", "LeftLeg", "RightLeg"}
-    local invisibleCount = 0
-    for _, partName in pairs(keyParts) do
-        local part = character:FindFirstChild(partName)
-        if part and part:IsA("BasePart") and part.Transparency >= 0.8 then
-            invisibleCount = invisibleCount + 1
+    
+    local parts = character:GetDescendants()
+    local totalParts = 0
+    local transparentParts = 0
+    
+    for _, part in pairs(parts) do
+        if part:IsA("BasePart") then
+            totalParts = totalParts + 1
+            if part.Transparency >= 0.8 then
+                transparentParts = transparentParts + 1
+            end
         end
     end
-    return invisibleCount >= 2
+    
+    return totalParts > 0 and transparentParts >= totalParts * 0.5
 end
 
 local function updateESP()
     for _, otherPlayer in pairs(game.Players:GetPlayers()) do
         if otherPlayer ~= player and otherPlayer.Character then
             local character = otherPlayer.Character
-            local success, rootPart = pcall(function() return character:FindFirstChild("HumanoidRootPart") end)
-            if not success or not rootPart then continue end
+            local highlight = character:FindFirstChild("ESPHighlight")
             
-            local success2, highlight = pcall(function()
-                local h = character:FindFirstChild("ESPHighlight")
-                if not h then
-                    h = Instance.new("Highlight")
-                    h.Name = "ESPHighlight"
-                    h.Parent = character
-                end
-                return h
-            end)
-            
-            if not success2 or not highlight then continue end
-            
-            pcall(function()
-                local invisible = isCharacterInvisible(character)
-                highlight.FillColor = espColor
-                highlight.OutlineColor = espColor
-                highlight.OutlineTransparency = 0
-                if invisible then
-                    highlight.FillTransparency = 0.5
-                    highlight.OutlineThickness = 4
+            if not highlight then
+                local success, newHighlight = pcall(Instance.new, "Highlight")
+                if success then
+                    highlight = newHighlight
+                    highlight.Name = "ESPHighlight"
+                    highlight.Parent = character
                 else
-                    highlight.FillTransparency = 0.75
-                    highlight.OutlineThickness = 3
+                    continue
                 end
-                highlight.Enabled = true
-            end)
+            end
+            
+            if highlight then
+                pcall(function()
+                    local invisible = isCharacterInvisible(character)
+                    highlight.FillColor = espColor
+                    highlight.OutlineColor = espColor
+                    highlight.OutlineTransparency = 0
+                    
+                    if invisible then
+                        highlight.FillTransparency = 0.5
+                        highlight.OutlineThickness = 4
+                    else
+                        highlight.FillTransparency = 0.75
+                        highlight.OutlineThickness = 3
+                    end
+                    
+                    highlight.Enabled = true
+                end)
+            end
         end
     end
 end
