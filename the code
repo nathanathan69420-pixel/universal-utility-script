@@ -37,7 +37,15 @@ local espConnection = nil
 local espColor = Color3.fromRGB(255, 255, 255)
 
 local lighting = game:GetService("Lighting")
-local storedLighting = {}
+local storedLighting = {
+    GlobalShadows = lighting.GlobalShadows,
+    Brightness = lighting.Brightness,
+    Ambient = lighting.Ambient,
+    OutdoorAmbient = lighting.OutdoorAmbient,
+    FogEnd = lighting.FogEnd,
+    FogStart = lighting.FogStart,
+    FogColor = lighting.FogColor
+}
 
 local function updateWalkspeed()
     local char = player.Character
@@ -114,13 +122,6 @@ local function updateFly()
 end
 
 local function updateFullbright()
-    storedLighting.GlobalShadows = lighting.GlobalShadows
-    storedLighting.Brightness = lighting.Brightness
-    storedLighting.Ambient = lighting.Ambient
-    storedLighting.OutdoorAmbient = lighting.OutdoorAmbient
-    storedLighting.FogEnd = lighting.FogEnd
-    storedLighting.FogStart = lighting.FogStart
-    
     lighting.GlobalShadows = false
     lighting.Brightness = 1
     lighting.Ambient = Color3.fromRGB(64, 64, 64)
@@ -139,6 +140,7 @@ local function resetFullbright()
     lighting.OutdoorAmbient = storedLighting.OutdoorAmbient
     lighting.FogEnd = storedLighting.FogEnd
     lighting.FogStart = storedLighting.FogStart
+    lighting.FogColor = storedLighting.FogColor
 end
 
 local function isCharacterInvisible(character)
