@@ -37,18 +37,16 @@ local espConnection = nil
 local espColor = Color3.fromRGB(255, 255, 255)
 
 local lighting = game:GetService("Lighting")
-local originalLighting = {
-    GlobalShadows = lighting.GlobalShadows,
-    Brightness = lighting.Brightness,
-    Ambient = lighting.Ambient,
-    OutdoorAmbient = lighting.OutdoorAmbient,
-    FogEnd = lighting.FogEnd,
-    FogStart = lighting.FogStart
-}
+local storedLighting = {}
 
 local function updateWalkspeed()
-    if humanoid then
-        humanoid.WalkSpeed = currentSpeed
+    local char = player.Character
+    if char then
+        local h = char:FindFirstChildOfClass("Humanoid")
+        if h then
+            h.WalkSpeed = currentSpeed
+            humanoid = h
+        end
     end
 end
 
@@ -116,6 +114,13 @@ local function updateFly()
 end
 
 local function updateFullbright()
+    storedLighting.GlobalShadows = lighting.GlobalShadows
+    storedLighting.Brightness = lighting.Brightness
+    storedLighting.Ambient = lighting.Ambient
+    storedLighting.OutdoorAmbient = lighting.OutdoorAmbient
+    storedLighting.FogEnd = lighting.FogEnd
+    storedLighting.FogStart = lighting.FogStart
+    
     lighting.GlobalShadows = false
     lighting.Brightness = 1
     lighting.Ambient = Color3.fromRGB(64, 64, 64)
@@ -128,12 +133,12 @@ local function updateFullbright()
 end
 
 local function resetFullbright()
-    lighting.GlobalShadows = originalLighting.GlobalShadows
-    lighting.Brightness = originalLighting.Brightness
-    lighting.Ambient = originalLighting.Ambient
-    lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
-    lighting.FogEnd = originalLighting.FogEnd
-    lighting.FogStart = originalLighting.FogStart
+    lighting.GlobalShadows = storedLighting.GlobalShadows
+    lighting.Brightness = storedLighting.Brightness
+    lighting.Ambient = storedLighting.Ambient
+    lighting.OutdoorAmbient = storedLighting.OutdoorAmbient
+    lighting.FogEnd = storedLighting.FogEnd
+    lighting.FogStart = storedLighting.FogStart
 end
 
 local function isCharacterInvisible(character)
