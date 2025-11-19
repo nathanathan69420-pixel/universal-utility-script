@@ -178,13 +178,8 @@ local function updateESP()
                     highlight.FillColor = espColor
                     highlight.OutlineColor = espColor
                     highlight.OutlineTransparency = 0
-                    if invisible then
-                        highlight.FillTransparency = 0.5
-                        highlight.OutlineThickness = 4
-                    else
-                        highlight.FillTransparency = 0.75
-                        highlight.OutlineThickness = 3
-                    end
+                    highlight.FillTransparency = 0.75
+                    highlight.OutlineThickness = 3
                     highlight.Enabled = true
                 end)
             end
