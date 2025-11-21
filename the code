@@ -1,1 +1,509 @@
-local a=loadstring(game:HttpGet('https://sirius.menu/rayfield'))()local b=a:CreateWindow({Name="Utility Script",LoadingTitle="Educational Purposes Only ;)",LoadingSubtitle="Made with LOVE"})local c=b:CreateTab("Movement",4483362458)local d=game.Players.LocalPlayer local e,f,g,h,i,j,k,l,m,n,o,p,q,r,s=false,16,nil,false,nil,false,nil,nil,nil,50,false,nil,false,nil,Color3.fromRGB(255,255,255)local t=game:GetService("Lighting")local u={GlobalShadows=t.GlobalShadows,Brightness=t.Brightness,Ambient=t.Ambient,OutdoorAmbient=t.OutdoorAmbient,FogEnd=t.FogEnd,FogStart=t.FogStart,FogColor=t.FogColor,ClockTime=t.ClockTime,GeographicLatitude=t.GeographicLatitude,ExposureCompensation=t.ExposureCompensation}local v=t.FogEnd<math.huge local function w()if d.Character then local x=d.Character:FindFirstChildOfClass("Humanoid")if x then x.WalkSpeed=f end end end local function y()if d.Character then for z,A in pairs(d.Character:GetDescendants())do if A:IsA("BasePart")then A.CanCollide=false end end end end local function B()if d.Character and d.Character:FindFirstChild("HumanoidRootPart")then local C=d.Character.HumanoidRootPart if not k then k=Instance.new("BodyVelocity")k.MaxForce=Vector3.new(9e9,9e9,9e9)k.Velocity=Vector3.new(0,0,0)k.Parent=C end if not l then l=Instance.new("BodyGyro")l.MaxTorque=Vector3.new(9e9,9e9,9e9)l.P=1e4 l.Parent=C end local D=workspace.CurrentCamera l.CFrame=D.CFrame local E=game:GetService("UserInputService")local F=Vector3.new(0,0,0)if E:IsKeyDown(Enum.KeyCode.W)then F=F+D.CFrame.LookVector end if E:IsKeyDown(Enum.KeyCode.S)then F=F-D.CFrame.LookVector end if E:IsKeyDown(Enum.KeyCode.A)then F=F-D.CFrame.RightVector end if E:IsKeyDown(Enum.KeyCode.D)then F=F+D.CFrame.RightVector end if E:IsKeyDown(Enum.KeyCode.Space)then F=F+Vector3.new(0,1,0)end if E:IsKeyDown(Enum.KeyCode.LeftShift)then F=F-Vector3.new(0,1,0)end if F.Magnitude>0 then k.Velocity=F.Unit*n else k.Velocity=Vector3.new(0,0,0)end end end local function G()t.GlobalShadows=false t.Brightness=2 t.Ambient=Color3.fromRGB(255,255,255)t.OutdoorAmbient=Color3.fromRGB(255,255,255)t.FogEnd=1e6 t.FogStart=0 t.ClockTime=14 t.GeographicLatitude=41.733 t.ExposureCompensation=0 t.FogColor=Color3.fromRGB(255,255,255)if t:FindFirstChild("Atmosphere")then t.Atmosphere:Destroy()end end local function H()t.GlobalShadows=u.GlobalShadows t.Brightness=u.Brightness t.Ambient=u.Ambient t.OutdoorAmbient=u.OutdoorAmbient t.FogEnd=u.FogEnd t.FogStart=u.FogStart t.FogColor=u.FogColor t.ClockTime=u.ClockTime t.GeographicLatitude=u.GeographicLatitude t.ExposureCompensation=u.ExposureCompensation if not v then t.FogEnd=0 end end local function I()for J,K in pairs(game.Players:GetPlayers())do if K~=d and K.Character then pcall(function()local L=K.Character local M=L:FindFirstChild("ESPHighlight")if not M then M=Instance.new("Highlight")M.Name="ESPHighlight"M.Adornee=L M.Parent=workspace.CurrentCamera M.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop end M.FillColor=s M.OutlineColor=s M.OutlineTransparency=0 M.FillTransparency=0.3 M.OutlineThickness=3 M.Enabled=true end)end end end local function N()for O,K in pairs(game.Players:GetPlayers())do pcall(function()local M=workspace.CurrentCamera:FindFirstChild("ESPHighlight")if M then M:Destroy()end end)end end local function P(Q)if e then w()end if h then y()end if j then k,l=nil,nil end if o then task.wait(0.5)I()end end d.CharacterAdded:Connect(P)game.Players.PlayerAdded:Connect(function(K)if o then task.wait(1)pcall(function()local L=K.Character or K.CharacterAdded:Wait()local M=L:FindFirstChild("ESPHighlight")if not M then M=Instance.new("Highlight")M.Name="ESPHighlight"M.Adornee=L M.Parent=workspace.CurrentCamera M.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop end M.FillColor=s M.OutlineColor=s M.OutlineTransparency=0 M.FillTransparency=0.3 M.OutlineThickness=3 M.Enabled=true end)end end)game.Players.PlayerRemoving:Connect(function(K)pcall(function()local M=workspace.CurrentCamera:FindFirstChild("ESPHighlight")if M then M:Destroy()end end)end)c:CreateSlider({Name="Walkspeed",Range={16,200},Increment=1,Suffix=" Speed",CurrentValue=16,Callback=function(R)f=R if e then w()end end})c:CreateToggle({Name="Walkspeed",CurrentValue=false,Callback=function(R)e=R if e then g=game:GetService("RunService").Heartbeat:Connect(w)w()else if g then g:Disconnect()g=nil end if d.Character and d.Character:FindFirstChildOfClass("Humanoid")then d.Character:FindFirstChildOfClass("Humanoid").WalkSpeed=16 end end end})c:CreateToggle({Name="Noclip",CurrentValue=false,Callback=function(R)h=R if h then i=game:GetService("RunService").Heartbeat:Connect(y)y()else if i then i:Disconnect()i=nil end if d.Character then for z,A in pairs(d.Character:GetDescendants())do if A:IsA("BasePart")then A.CanCollide=true end end end end end})c:CreateSlider({Name="Fly Speed",Range={16,200},Increment=1,Suffix=" Speed",CurrentValue=50,Callback=function(R)n=R end})c:CreateToggle({Name="Fly",CurrentValue=false,Callback=function(R)j=R if j then m=game:GetService("RunService").Heartbeat:Connect(B)B()else if m then m:Disconnect()m=nil end if k then k:Destroy()k=nil end if l then l:Destroy()l=nil end end end})local S=b:CreateTab("Visuals",4483362458)S:CreateToggle({Name="Fullbright",CurrentValue=false,Callback=function(R)p=R if p then q=game:GetService("RunService").Heartbeat:Connect(G)G()else if q then q:Disconnect()q=nil end H()end end})S:CreateToggle({Name="Player ESP",CurrentValue=false,Callback=function(R)o=R if o then r=game:GetService("RunService").Heartbeat:Connect(function()pcall(I)end)I()else if r then r:Disconnect()r=nil end N()end end})S:CreateColorPicker({Name="ESP Color",Color=s,Callback=function(R)s=R if o then pcall(I)end end})
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local MainWindow = Rayfield:CreateWindow({Name="Utility Script",LoadingTitle="Educational Purposes Only ;)",LoadingSubtitle="Made with LOVE"})
+local MovementTab = MainWindow:CreateTab("Movement",4483362458)
+
+local player = game.Players.LocalPlayer
+local lighting = game:GetService("Lighting")
+local runService = game:GetService("RunService")
+local inputService = game:GetService("UserInputService")
+
+local walkSpeedEnabled = false
+local walkSpeedValue = 16
+local walkSpeedConnection = nil
+local noclipEnabled = false
+local noclipConnection = nil
+local flyEnabled = false
+local flySpeedValue = 50
+local flyConnection = nil
+local bodyVelocity = nil
+local bodyGyro = nil
+local fullbrightEnabled = false
+local fullbrightConnection = nil
+local espEnabled = false
+local espConnection = nil
+local espColor = Color3.fromRGB(255,255,255)
+
+local originalLightingSettings = {
+    GlobalShadows = lighting.GlobalShadows,
+    Brightness = lighting.Brightness,
+    Ambient = lighting.Ambient,
+    OutdoorAmbient = lighting.OutdoorAmbient,
+    FogEnd = lighting.FogEnd,
+    FogStart = lighting.FogStart,
+    FogColor = lighting.FogColor,
+    ClockTime = lighting.ClockTime,
+    GeographicLatitude = lighting.GeographicLatitude,
+    ExposureCompensation = lighting.ExposureCompensation
+}
+
+local hadFog = lighting.FogEnd < math.huge
+local antiCheatHooks = {}
+local validationSpoofs = {}
+local fakeTrafficEnabled = true
+local bypassActive = false
+
+local function randomDelay()
+    return math.random(30, 150) / 1000
+end
+
+local function spoofMemoryValidation()
+    if not game:GetService("ScriptContext") then return end
+    local context = getrenv().scriptcontext or game:GetService("ScriptContext")
+    local oldValidate = context.ValidateScript
+    if oldValidate then
+        context.ValidateScript = function(script, ...)
+            if script and (script:IsDescendantOf(player.PlayerScripts) or script.Name == "CoreScript") then
+                return true
+            end
+            return oldValidate(script, ...)
+        end
+        table.insert(antiCheatHooks, {object = context, method = "ValidateScript", original = oldValidate})
+    end
+end
+
+local function hookNetworkFunctions()
+    local networkClient = game:FindService("NetworkClient")
+    if networkClient then
+        local oldInvoke = networkClient.InvokeServer
+        if oldInvoke then
+            networkClient.InvokeServer = function(self, ...)
+                local args = {...}
+                if args[1] and type(args[1]) == "string" then
+                    local method = string.lower(args[1])
+                    if method:find("validation") or method:find("handshake") or method:find("integrity") or method:find("anti") then
+                        return "valid"
+                    end
+                    if method:find("walkspeed") or method:find("fly") or method:find("noclip") then
+                        return true
+                    end
+                end
+                return oldInvoke(self, ...)
+            end
+            table.insert(antiCheatHooks, {object = networkClient, method = "InvokeServer", original = oldInvoke})
+        end
+    end
+    
+    for _, obj in pairs(game:GetDescendants()) do
+        if obj:IsA("RemoteEvent") then
+            local oldFire = obj.FireServer
+            if oldFire then
+                obj.FireServer = function(self, ...)
+                    local args = {...}
+                    if args[1] and type(args[1]) == "string" then
+                        local method = string.lower(args[1])
+                        if method:find("detection") or method:find("cheat") or method:find("hack") or method:find("exploit") then
+                            return nil
+                        end
+                    end
+                    return oldFire(self, ...)
+                end
+                table.insert(antiCheatHooks, {object = obj, method = "FireServer", original = oldFire})
+            end
+        end
+    end
+end
+
+local function hookGameMetatable()
+    local mt = getrawmetatable(game)
+    if mt then
+        local oldIndex = mt.__index
+        local oldNamecall = mt.__namecall
+        
+        setreadonly(mt, false)
+        
+        if oldIndex then
+            mt.__index = function(self, key)
+                if tostring(key) == "WalkSpeed" and walkSpeedEnabled then
+                    return walkSpeedValue
+                end
+                if tostring(key) == "BodyVelocity" and flyEnabled then
+                    return nil
+                end
+                return oldIndex(self, key)
+            end
+        end
+        
+        if oldNamecall then
+            mt.__namecall = function(self, ...)
+                local method = getnamecallmethod()
+                local args = {...}
+                
+                if method == "FindFirstChild" and args[1] and type(args[1]) == "string" then
+                    local name = string.lower(args[1])
+                    if name:find("anti") or name:find("cheat") or name:find("detection") then
+                        return nil
+                    end
+                end
+                
+                if method == "Kick" and self == player then
+                    return nil
+                end
+                
+                return oldNamecall(self, ...)
+            end
+        end
+        setreadonly(mt, true)
+    end
+end
+
+local function generateFakeTraffic()
+    task.spawn(function()
+        while task.wait(math.random(3, 8)) do
+            pcall(function()
+                local events = game:GetService("ReplicatedStorage"):GetChildren()
+                for _, event in pairs(events) do
+                    if event:IsA("RemoteEvent") and math.random(1, 10) == 1 then
+                        event:FireServer("PlayerUpdate", os.time(), math.random(1,100))
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+local function spoofHumanoidProperties()
+    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        local oldWalkSpeed = humanoid.WalkSpeed
+        humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if walkSpeedEnabled and humanoid.WalkSpeed ~= walkSpeedValue then
+                task.wait(randomDelay())
+                humanoid.WalkSpeed = walkSpeedValue
+            end
+        end)
+        
+        local oldHealth = humanoid.Health
+        humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+            if humanoid.Health ~= oldHealth and humanoid.Health < 10 then
+                humanoid.Health = oldHealth
+            end
+            oldHealth = humanoid.Health
+        end)
+    end
+end
+
+local function initializeBypass()
+    if bypassActive then return end
+    
+    spoofMemoryValidation()
+    hookNetworkFunctions()
+    hookGameMetatable()
+    generateFakeTraffic()
+    
+    task.spawn(function()
+        while task.wait(math.random(10, 30)) do
+            pcall(function()
+                spoofHumanoidProperties()
+                hookNetworkFunctions()
+            end)
+        end
+    end)
+    
+    bypassActive = true
+end
+
+local function applyWalkSpeed()
+    if player.Character then
+        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            task.wait(randomDelay())
+            humanoid.WalkSpeed = walkSpeedValue
+        end
+    end
+end
+
+local function applyNoclip()
+    if player.Character then
+        for _, part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end
+
+local function updateFlying()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local rootPart = player.Character.HumanoidRootPart
+        if not bodyVelocity then
+            bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.MaxForce = Vector3.new(9e9,9e9,9e9)
+            bodyVelocity.Velocity = Vector3.new(0,0,0)
+            bodyVelocity.Name = "NetworkPart"
+            bodyVelocity.Parent = rootPart
+        end
+        if not bodyGyro then
+            bodyGyro = Instance.new("BodyGyro")
+            bodyGyro.MaxTorque = Vector3.new(9e9,9e9,9e9)
+            bodyGyro.P = 1e4
+            bodyGyro.Name = "CameraGyro"
+            bodyGyro.Parent = rootPart
+        end
+        local camera = workspace.CurrentCamera
+        bodyGyro.CFrame = camera.CFrame
+        local moveDirection = Vector3.new(0,0,0)
+        if inputService:IsKeyDown(Enum.KeyCode.W) then
+            moveDirection = moveDirection + camera.CFrame.LookVector
+        end
+        if inputService:IsKeyDown(Enum.KeyCode.S) then
+            moveDirection = moveDirection - camera.CFrame.LookVector
+        end
+        if inputService:IsKeyDown(Enum.KeyCode.A) then
+            moveDirection = moveDirection - camera.CFrame.RightVector
+        end
+        if inputService:IsKeyDown(Enum.KeyCode.D) then
+            moveDirection = moveDirection + camera.CFrame.RightVector
+        end
+        if inputService:IsKeyDown(Enum.KeyCode.Space) then
+            moveDirection = moveDirection + Vector3.new(0,1,0)
+        end
+        if inputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+            moveDirection = moveDirection - Vector3.new(0,1,0)
+        end
+        if moveDirection.Magnitude > 0 then
+            bodyVelocity.Velocity = moveDirection.Unit * flySpeedValue
+        else
+            bodyVelocity.Velocity = Vector3.new(0,0,0)
+        end
+    end
+end
+
+local function applyFullbright()
+    lighting.GlobalShadows = false
+    lighting.Brightness = 2
+    lighting.Ambient = Color3.fromRGB(255,255,255)
+    lighting.OutdoorAmbient = Color3.fromRGB(255,255,255)
+    lighting.FogEnd = 1e6
+    lighting.FogStart = 0
+    lighting.ClockTime = 14
+    lighting.GeographicLatitude = 41.733
+    lighting.ExposureCompensation = 0
+    lighting.FogColor = Color3.fromRGB(255,255,255)
+    if lighting:FindFirstChild("Atmosphere") then
+        lighting.Atmosphere:Destroy()
+    end
+end
+
+local function restoreLighting()
+    lighting.GlobalShadows = originalLightingSettings.GlobalShadows
+    lighting.Brightness = originalLightingSettings.Brightness
+    lighting.Ambient = originalLightingSettings.Ambient
+    lighting.OutdoorAmbient = originalLightingSettings.OutdoorAmbient
+    lighting.FogEnd = originalLightingSettings.FogEnd
+    lighting.FogStart = originalLightingSettings.FogStart
+    lighting.FogColor = originalLightingSettings.FogColor
+    lighting.ClockTime = originalLightingSettings.ClockTime
+    lighting.GeographicLatitude = originalLightingSettings.GeographicLatitude
+    lighting.ExposureCompensation = originalLightingSettings.ExposureCompensation
+    if not hadFog then
+        lighting.FogEnd = 0
+    end
+end
+
+local function updateESP()
+    for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            pcall(function()
+                local character = otherPlayer.Character
+                local highlight = character:FindFirstChild("ESPHighlight")
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Name = "ESPHighlight"
+                    highlight.Adornee = character
+                    highlight.Parent = workspace.CurrentCamera
+                    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                end
+                highlight.FillColor = espColor
+                highlight.OutlineColor = espColor
+                highlight.OutlineTransparency = 0
+                highlight.FillTransparency = 0.3
+                highlight.OutlineThickness = 3
+                highlight.Enabled = true
+            end)
+        end
+    end
+end
+
+local function removeESP()
+    for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+        pcall(function()
+            local highlight = workspace.CurrentCamera:FindFirstChild("ESPHighlight")
+            if highlight then
+                highlight:Destroy()
+            end
+        end)
+    end
+end
+
+local function onCharacterAdded(character)
+    task.wait(1)
+    initializeBypass()
+    spoofHumanoidProperties()
+    
+    if walkSpeedEnabled then
+        task.wait(randomDelay())
+        applyWalkSpeed()
+    end
+    if noclipEnabled then
+        applyNoclip()
+    end
+    if flyEnabled then
+        bodyVelocity, bodyGyro = nil, nil
+        task.wait(0.5)
+        updateFlying()
+    end
+    if espEnabled then
+        task.wait(0.5)
+        updateESP()
+    end
+end
+
+initializeBypass()
+player.CharacterAdded:Connect(onCharacterAdded)
+
+if player.Character then
+    task.wait(2)
+    onCharacterAdded(player.Character)
+end
+
+game.Players.PlayerAdded:Connect(function(otherPlayer)
+    if espEnabled then
+        task.wait(1)
+        pcall(function()
+            local character = otherPlayer.Character or otherPlayer.CharacterAdded:Wait()
+            local highlight = character:FindFirstChild("ESPHighlight")
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Name = "ESPHighlight"
+                highlight.Adornee = character
+                highlight.Parent = workspace.CurrentCamera
+                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            end
+            highlight.FillColor = espColor
+            highlight.OutlineColor = espColor
+            highlight.OutlineTransparency = 0
+            highlight.FillTransparency = 0.3
+            highlight.OutlineThickness = 3
+            highlight.Enabled = true
+        end)
+    end
+end)
+
+game.Players.PlayerRemoving:Connect(function(otherPlayer)
+    pcall(function()
+        local highlight = workspace.CurrentCamera:FindFirstChild("ESPHighlight")
+        if highlight then
+            highlight:Destroy()
+        end
+    end)
+end)
+
+MovementTab:CreateSlider({Name="Walkspeed",Range={16,200},Increment=1,Suffix=" Speed",CurrentValue=16,Callback=function(value)
+    walkSpeedValue = value
+    if walkSpeedEnabled then
+        applyWalkSpeed()
+    end
+end})
+
+MovementTab:CreateToggle({Name="Walkspeed",CurrentValue=false,Callback=function(enabled)
+    walkSpeedEnabled = enabled
+    if walkSpeedEnabled then
+        initializeBypass()
+        walkSpeedConnection = runService.Heartbeat:Connect(applyWalkSpeed)
+        applyWalkSpeed()
+    else
+        if walkSpeedConnection then
+            walkSpeedConnection:Disconnect()
+            walkSpeedConnection = nil
+        end
+        if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+            player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+        end
+    end
+end})
+
+MovementTab:CreateToggle({Name="Noclip",CurrentValue=false,Callback=function(enabled)
+    noclipEnabled = enabled
+    if noclipEnabled then
+        initializeBypass()
+        noclipConnection = runService.Heartbeat:Connect(applyNoclip)
+        applyNoclip()
+    else
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+        if player.Character then
+            for _, part in pairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+end})
+
+MovementTab:CreateSlider({Name="Fly Speed",Range={16,200},Increment=1,Suffix=" Speed",CurrentValue=50,Callback=function(value)
+    flySpeedValue = value
+end})
+
+MovementTab:CreateToggle({Name="Fly",CurrentValue=false,Callback=function(enabled)
+    flyEnabled = enabled
+    if flyEnabled then
+        initializeBypass()
+        flyConnection = runService.Heartbeat:Connect(updateFlying)
+        updateFlying()
+    else
+        if flyConnection then
+            flyConnection:Disconnect()
+            flyConnection = nil
+        end
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+            bodyVelocity = nil
+        end
+        if bodyGyro then
+            bodyGyro:Destroy()
+            bodyGyro = nil
+        end
+    end
+end})
+
+local VisualsTab = MainWindow:CreateTab("Visuals",4483362458)
+
+VisualsTab:CreateToggle({Name="Fullbright",CurrentValue=false,Callback=function(enabled)
+    fullbrightEnabled = enabled
+    if fullbrightEnabled then
+        fullbrightConnection = runService.Heartbeat:Connect(applyFullbright)
+        applyFullbright()
+    else
+        if fullbrightConnection then
+            fullbrightConnection:Disconnect()
+            fullbrightConnection = nil
+        end
+        restoreLighting()
+    end
+end})
+
+VisualsTab:CreateToggle({Name="Player ESP",CurrentValue=false,Callback=function(enabled)
+    espEnabled = enabled
+    if espEnabled then
+        espConnection = runService.Heartbeat:Connect(function()
+            pcall(updateESP)
+        end)
+        updateESP()
+    else
+        if espConnection then
+            espConnection:Disconnect()
+            espConnection = nil
+        end
+        removeESP()
+    end
+end})
+
+VisualsTab:CreateColorPicker({Name="ESP Color",Color=espColor,Callback=function(color)
+    espColor = color
+    if espEnabled then
+        pcall(updateESP)
+    end
+end})
